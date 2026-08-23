@@ -3534,3 +3534,11 @@ objective
 2026-08-23 23:55:05,626 - datapilot.main - INFO - Starting DataPilot-AI v0.1.0 (development)
 2026-08-23 23:55:05,627 - datapilot.database - INFO - Database schema initialized successfully.
 2026-08-23 23:55:05,627 - datapilot.main - INFO - Database initialized successfully.
+2026-08-24 02:03:03,515 - datapilot.main - INFO - Shutting down DataPilot-AI
+2026-08-24 02:03:05,515 - datapilot.main - INFO - Starting DataPilot-AI v0.1.0 (development)
+2026-08-24 02:03:05,517 - datapilot.database - INFO - Database schema initialized successfully.
+2026-08-24 02:03:05,517 - datapilot.main - INFO - Database initialized successfully.
+2026-08-24 02:07:18,897 - datapilot.main - INFO - Shutting down DataPilot-AI
+2026-08-24 02:07:20,676 - datapilot.main - INFO - Starting DataPilot-AI v0.1.0 (development)
+2026-08-24 02:07:20,677 - datapilot.database - INFO - Database schema initialized successfully.
+2026-08-24 02:07:20,677 - datapilot.main - INFO - Database initialized successfully.
