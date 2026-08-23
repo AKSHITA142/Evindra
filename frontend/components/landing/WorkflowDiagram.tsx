@@ -267,7 +267,7 @@ function LangGraphNeuralCanvas({ activeStageIndex }: { activeStageIndex: number 
             ctx.moveTo(nodes[i].x, nodes[i].y);
             ctx.lineTo(nodes[j].x, nodes[j].y);
             ctx.strokeStyle = isHighlighted
-              ? `rgba(51, 199, 182, ${alpha * 2.2})`
+              ? `rgba(140,255,32, ${alpha * 2.2})`
               : `rgba(100, 116, 139, ${alpha * 0.7})`;
             ctx.lineWidth = isHighlighted ? 1.2 : 0.75;
             ctx.stroke();
@@ -291,7 +291,7 @@ function LangGraphNeuralCanvas({ activeStageIndex }: { activeStageIndex: number 
         ctx.beginPath();
         ctx.arc(node.x, node.y, node.size, 0, Math.PI * 2);
         const isActiveCluster = node.stageCluster === activeStageIndex;
-        ctx.fillStyle = isActiveCluster ? "rgba(51, 199, 182, 0.85)" : "rgba(148, 163, 184, 0.3)";
+        ctx.fillStyle = isActiveCluster ? "rgba(140,255,32, 0.85)" : "rgba(148, 163, 184, 0.3)";
         ctx.fill();
 
         node.x += node.vx;
@@ -419,7 +419,7 @@ export function WorkflowDiagram() {
                       <div className="h-0.5 w-8 bg-border-subtle" />
                       <div
                         className={`h-0.5 w-8 transition-colors duration-500 ${
-                          active >= 1 ? "bg-brand-400 shadow-[0_0_8px_rgba(51,199,182,0.8)]" : "bg-border-subtle"
+                          active >= 1 ? "bg-brand-400 shadow-[0_0_8px_rgba(140,255,32,0.8)]" : "bg-border-subtle"
                         }`}
                       />
                       <ArrowRight
@@ -443,7 +443,7 @@ export function WorkflowDiagram() {
                       <div className="h-0.5 w-8 bg-border-subtle" />
                       <div
                         className={`h-0.5 w-8 transition-colors duration-500 ${
-                          active >= 2 ? "bg-brand-400 shadow-[0_0_8px_rgba(51,199,182,0.8)]" : "bg-border-subtle"
+                          active >= 2 ? "bg-brand-400 shadow-[0_0_8px_rgba(140,255,32,0.8)]" : "bg-border-subtle"
                         }`}
                       />
                       <ArrowRight
@@ -500,7 +500,7 @@ export function WorkflowDiagram() {
                       <div className="h-0.5 w-8 bg-border-subtle" />
                       <div
                         className={`h-0.5 w-8 transition-colors duration-500 ${
-                          active >= 4 ? "bg-brand-400 shadow-[0_0_8px_rgba(51,199,182,0.8)]" : "bg-border-subtle"
+                          active >= 4 ? "bg-brand-400 shadow-[0_0_8px_rgba(140,255,32,0.8)]" : "bg-border-subtle"
                         }`}
                       />
                       <ArrowRight
@@ -524,7 +524,7 @@ export function WorkflowDiagram() {
                       <div className="h-0.5 w-8 bg-border-subtle" />
                       <div
                         className={`h-0.5 w-8 transition-colors duration-500 ${
-                          active >= 5 ? "bg-brand-400 shadow-[0_0_8px_rgba(51,199,182,0.8)]" : "bg-border-subtle"
+                          active >= 5 ? "bg-brand-400 shadow-[0_0_8px_rgba(140,255,32,0.8)]" : "bg-border-subtle"
                         }`}
                       />
                       <ArrowRight

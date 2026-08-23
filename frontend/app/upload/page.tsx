@@ -108,7 +108,7 @@ export default function UploadPage() {
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] pointer-events-none -z-0"
         style={{
           background:
-            "radial-gradient(ellipse, rgba(18,179,163,0.08) 0%, transparent 70%)",
+            "radial-gradient(ellipse, rgba(118,255,3,0.08) 0%, transparent 70%)",
         }}
       />
 
@@ -341,7 +341,7 @@ export default function UploadPage() {
                 desc: "Auto-detects target & metrics",
                 badge: "Smart Auto",
                 icon: Sparkles,
-                activeColor: "border-brand-400 bg-brand-500/10 text-brand-400 shadow-[0_0_15px_rgba(18,179,163,0.15)]",
+                activeColor: "border-brand-400 bg-brand-500/10 text-brand-400 shadow-[0_0_15px_rgba(118,255,3,0.15)]",
                 iconBg: "bg-brand-500/15 text-brand-400 border-brand-500/30",
               },
               {
@@ -350,8 +350,8 @@ export default function UploadPage() {
                 desc: "Categories, labels & churn",
                 badge: "Precision / F1",
                 icon: Layers,
-                activeColor: "border-indigo-400 bg-indigo-500/10 text-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.15)]",
-                iconBg: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30",
+                activeColor: "border-info-400 bg-info-500/10 text-info-400 shadow-[0_0_15px_rgba(56,146,246,0.15)]",
+                iconBg: "bg-info-500/15 text-info-400 border-info-500/30",
               },
               {
                 id: "regression" as const,
@@ -359,8 +359,8 @@ export default function UploadPage() {
                 desc: "Numeric value estimation",
                 badge: "R² / RMSE",
                 icon: TrendingUp,
-                activeColor: "border-emerald-400 bg-emerald-500/10 text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.15)]",
-                iconBg: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+                activeColor: "border-success-400 bg-success-500/10 text-success-400 shadow-[0_0_15px_rgba(0,230,118,0.15)]",
+                iconBg: "bg-success-500/15 text-success-400 border-success-500/30",
               },
             ].map((option) => {
               const selected = taskType === option.id;

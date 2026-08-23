@@ -41,10 +41,10 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
-      { url: "/evidra-icon.png", type: "image/png" },
+      { url: "/evidra-icon-v2.png", type: "image/png" },
     ],
     shortcut: "/favicon.ico",
-    apple: "/evidra-icon.png",
+    apple: "/evidra-icon-v2.png",
   },
   openGraph: {
     title: "Evidra — Autonomous AI Data Scientist & ML Research Engine",
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0b",
+  themeColor: "#080C0E",
 };
 
 export default function RootLayout({

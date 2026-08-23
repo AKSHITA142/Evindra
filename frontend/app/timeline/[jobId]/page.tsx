@@ -254,12 +254,12 @@ export default function TimelinePage({
                   <motion.div
                     initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="mb-4 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs"
+                    className="mb-4 p-3 rounded-xl bg-success-500/10 border border-success-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs"
                   >
-                    <div className="flex items-center gap-2 text-emerald-400">
-                      <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
+                    <div className="flex items-center gap-2 text-success-400">
+                      <CheckCircle2 className="w-4 h-4 shrink-0 text-success-400" />
                       <span>
-                        <strong className="font-semibold text-emerald-300">Research Complete!</strong> All pipeline stages finished.
+                        <strong className="font-semibold text-success-400">Research Complete!</strong> All pipeline stages finished.
                       </span>
                     </div>
                     <Button
@@ -378,7 +378,7 @@ export default function TimelinePage({
                 >
                   {job?.status === "completed" ? (
                     <>
-                      <CheckCircle2 className="w-8 h-8 text-emerald-400 opacity-60 mb-1" />
+                      <CheckCircle2 className="w-8 h-8 text-success-400 opacity-60 mb-1" />
                       <p className="text-xs text-text-secondary">Execution logs archived for this completed job.</p>
                     </>
                   ) : (

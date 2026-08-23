@@ -51,3 +51,7 @@ storage/data/
 storage/models/
 storage/reports/
 
+.claude/
+
+
+

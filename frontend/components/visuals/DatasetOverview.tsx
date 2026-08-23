@@ -58,16 +58,16 @@ export function DatasetOverview({ dataset, className = "" }: DatasetOverviewProp
     <div className={`space-y-6 ${className}`}>
       {/* 1. Mission Brief Banner */}
       {dataset.mission_brief && (
-        <GlassCard className="p-5 border-l-4 border-indigo-500 bg-gradient-to-r from-indigo-900/20 to-purple-900/10">
+        <GlassCard className="p-5 border-l-2 border-brand-500 bg-brand-500/[0.06]">
           <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-indigo-500/20 text-indigo-400">
+            <div className="p-2 rounded-lg bg-brand-500/15 text-brand-500">
               <Target className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-indigo-400 mb-1">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-brand-500 mb-1">
                 Dataset Mission & Objective
               </h4>
-              <p className="text-sm text-gray-200 font-medium">
+              <p className="text-sm text-text font-medium">
                 {dataset.mission_brief}
               </p>
             </div>
@@ -78,49 +78,49 @@ export function DatasetOverview({ dataset, className = "" }: DatasetOverviewProp
       {/* 2. Top Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <GlassCard className="p-4 flex items-center gap-3">
-          <div className="p-3 rounded-lg bg-blue-500/10 text-blue-400">
+          <div className="p-3 rounded-lg bg-info-500/10 text-info-400">
             <Database className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs text-gray-400">Total Rows</div>
-            <div className="text-lg font-bold text-gray-100">{rows.toLocaleString()}</div>
+            <div className="text-xs text-text-secondary">Total Rows</div>
+            <div className="text-lg font-bold text-text">{rows.toLocaleString()}</div>
           </div>
         </GlassCard>
 
         <GlassCard className="p-4 flex items-center gap-3">
-          <div className="p-3 rounded-lg bg-emerald-500/10 text-emerald-400">
+          <div className="p-3 rounded-lg bg-success-500/10 text-success-400">
             <Layers className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs text-gray-400">Total Columns</div>
-            <div className="text-lg font-bold text-gray-100">{cols.toLocaleString()}</div>
+            <div className="text-xs text-text-secondary">Total Columns</div>
+            <div className="text-lg font-bold text-text">{cols.toLocaleString()}</div>
           </div>
         </GlassCard>
 
         <GlassCard className="p-4 flex items-center gap-3">
-          <div className="p-3 rounded-lg bg-purple-500/10 text-purple-400">
+          <div className="p-3 rounded-lg bg-surface-4 text-text-secondary">
             <FileText className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs text-gray-400">File Size</div>
-            <div className="text-lg font-bold text-gray-100">{formatBytes(fileSize)}</div>
+            <div className="text-xs text-text-secondary">File Size</div>
+            <div className="text-lg font-bold text-text">{formatBytes(fileSize)}</div>
           </div>
         </GlassCard>
 
-        <GlassCard className="p-4 flex items-center gap-3 border-l-4 border-indigo-500">
-          <div className="p-3 rounded-lg bg-amber-500/10 text-amber-400 shrink-0">
+        <GlassCard className="p-4 flex items-center gap-3 border-l-2 border-brand-500">
+          <div className="p-3 rounded-lg bg-warning-500/10 text-warning-400 shrink-0">
             <BarChart2 className="w-5 h-5" />
           </div>
           <div className="overflow-hidden">
-            <div className="text-xs text-gray-400 flex items-center gap-1.5">
+            <div className="text-xs text-text-secondary flex items-center gap-1.5">
               <span>Target & Task</span>
-              <span className="px-1.5 py-0.2 text-[9px] font-mono bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30">
+              <span className="px-1.5 py-0.2 text-[9px] font-mono bg-brand-500/15 text-brand-500 rounded border border-brand-500/30">
                 AUTO-DETECTED
               </span>
             </div>
-            <div className="text-sm font-semibold text-gray-100 truncate flex items-center gap-1.5 mt-0.5">
-              <span className="text-indigo-400 font-mono">{targetCol}</span>
-              <span className="text-xs text-gray-400 font-normal">({taskType})</span>
+            <div className="text-sm font-semibold text-text truncate flex items-center gap-1.5 mt-0.5">
+              <span className="text-brand-500 font-mono">{targetCol}</span>
+              <span className="text-xs text-text-secondary font-normal">({taskType})</span>
             </div>
           </div>
         </GlassCard>
@@ -129,21 +129,21 @@ export function DatasetOverview({ dataset, className = "" }: DatasetOverviewProp
       {/* 3. Detailed Column Profiles Table */}
       <GlassCard className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold text-gray-100 flex items-center gap-2">
-            <Database className="w-4 h-4 text-indigo-400" />
+          <h3 className="text-base font-semibold text-text flex items-center gap-2">
+            <Database className="w-4 h-4 text-brand-500" />
             Column Schema & Statistical Profiles ({columnProfiles.length})
           </h3>
         </div>
 
         {columnProfiles.length === 0 ? (
-          <div className="text-center py-8 text-gray-400 text-sm">
+          <div className="text-center py-8 text-text-secondary text-sm">
             No column profiles available for this dataset.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-gray-800 text-gray-400 uppercase tracking-wider font-semibold">
+                <tr className="border-b border-border text-text-secondary uppercase tracking-wider font-semibold">
                   <th className="py-3 px-3">Column Name</th>
                   <th className="py-3 px-3">Type</th>
                   <th className="py-3 px-3">Missing</th>
@@ -153,7 +153,7 @@ export function DatasetOverview({ dataset, className = "" }: DatasetOverviewProp
                   <th className="py-3 px-3">Sample Values</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800/50 text-gray-300">
+              <tbody className="divide-y divide-border-subtle text-text">
                 {columnProfiles.map((col: ColumnData) => {
                   const missingPct = col.missing_pct ?? col.missing_percent ?? 0;
                   const missingCount = col.missing_count ?? 0;
@@ -161,11 +161,11 @@ export function DatasetOverview({ dataset, className = "" }: DatasetOverviewProp
                   const colType = col.type || col.dtype || "unknown";
 
                   return (
-                    <tr key={col.name} className="hover:bg-gray-800/30 transition-colors">
-                      <td className="py-3 px-3 font-medium text-gray-200">
+                    <tr key={col.name} className="hover:bg-white/[0.025] transition-colors">
+                      <td className="py-3 px-3 font-medium text-text">
                         {col.name}
                         {col.name === targetCol && (
-                          <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-indigo-500/20 text-indigo-300 rounded border border-indigo-500/30 font-mono">
+                          <span className="ml-2 px-1.5 py-0.5 text-[10px] bg-brand-500/15 text-brand-500 rounded border border-brand-500/30 font-mono">
                             TARGET
                           </span>
                         )}
@@ -177,44 +177,44 @@ export function DatasetOverview({ dataset, className = "" }: DatasetOverviewProp
                         />
                       </td>
                       <td className="py-3 px-3">
-                        <span className={missingPct > 0 ? "text-amber-400 font-semibold" : "text-gray-400"}>
+                        <span className={missingPct > 0 ? "text-warning-400 font-semibold" : "text-text-secondary"}>
                           {missingCount} ({missingPct}%)
                         </span>
                       </td>
-                      <td className="py-3 px-3 font-mono text-gray-300">
+                      <td className="py-3 px-3 font-mono text-text-secondary">
                         {typeof distinctCount === "number" ? distinctCount.toLocaleString() : distinctCount}
                       </td>
-                      <td className="py-3 px-3 text-gray-400 font-mono">
+                      <td className="py-3 px-3 text-text-secondary font-mono">
                         {col.mean !== undefined && col.mean !== null ? (
                           <div>
                             <div>mean: {col.mean} | std: {col.std}</div>
                             <div>min: {col.min} | max: {col.max}</div>
                             {col.skewness !== null && col.skewness !== undefined && (
-                              <div className="text-gray-500 text-[10px]">skew: {col.skewness}</div>
+                              <div className="text-text-muted text-[10px]">skew: {col.skewness}</div>
                             )}
                           </div>
                         ) : (
-                          <span className="text-gray-600">—</span>
+                          <span className="text-text-muted">—</span>
                         )}
                       </td>
                       <td className="py-3 px-3">
                         <div className="flex flex-col gap-1">
                           {col.encoding_recommendation && (
-                            <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/10 text-purple-300 border border-purple-500/20 rounded">
+                            <span className="text-[10px] px-1.5 py-0.5 bg-brand-500/10 text-brand-300 border border-brand-500/20 rounded">
                               Enc: {col.encoding_recommendation}
                             </span>
                           )}
                           {col.scaling_recommendation && (
-                            <span className="text-[10px] px-1.5 py-0.5 bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 rounded">
+                            <span className="text-[10px] px-1.5 py-0.5 bg-success-500/10 text-success-400 border border-success-500/20 rounded">
                               Scale: {col.scaling_recommendation}
                             </span>
                           )}
                           {!col.encoding_recommendation && !col.scaling_recommendation && (
-                            <span className="text-gray-600 text-[10px]">—</span>
+                            <span className="text-text-muted text-[10px]">—</span>
                           )}
                         </div>
                       </td>
-                      <td className="py-3 px-3 max-w-[200px] truncate text-gray-400 font-mono">
+                      <td className="py-3 px-3 max-w-[200px] truncate text-text-secondary font-mono">
                         {col.sample_values && col.sample_values.length > 0
                           ? col.sample_values.join(", ")
                           : "N/A"}
@@ -230,16 +230,16 @@ export function DatasetOverview({ dataset, className = "" }: DatasetOverviewProp
 
       {/* 4. Quality Issues & Warnings */}
       {qualityIssues.length > 0 && (
-        <GlassCard className="p-6 border-l-4 border-amber-500">
-          <h3 className="text-base font-semibold text-amber-400 flex items-center gap-2 mb-3">
+        <GlassCard className="p-6 border-l-2 border-warning-500">
+          <h3 className="text-base font-semibold text-warning-400 flex items-center gap-2 mb-3">
             <AlertTriangle className="w-5 h-5" />
             Detected Data Quality Issues ({qualityIssues.length})
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {qualityIssues.map((issue: QualityIssueItem, idx: number) => (
-              <div key={idx} className="p-3 bg-gray-900/60 rounded-lg border border-amber-500/20 text-xs">
+              <div key={idx} className="p-3 bg-surface-1 rounded-lg border border-warning-500/20 text-xs">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-semibold text-gray-200">
+                  <span className="font-semibold text-text">
                     {issue.problem || issue.warning_type || "Quality Issue"}
                   </span>
                   <Badge
@@ -247,9 +247,9 @@ export function DatasetOverview({ dataset, className = "" }: DatasetOverviewProp
                     variant={issue.severity === "high" ? "cancelled" : "warning"}
                   />
                 </div>
-                <p className="text-gray-400 mb-1">{issue.description || issue.message}</p>
+                <p className="text-text-secondary mb-1">{issue.description || issue.message}</p>
                 {issue.affected_columns && issue.affected_columns.length > 0 && (
-                  <div className="text-[10px] text-amber-400/80">
+                  <div className="text-[10px] text-warning-400/80">
                     Columns: {issue.affected_columns.join(", ")}
                   </div>
                 )}

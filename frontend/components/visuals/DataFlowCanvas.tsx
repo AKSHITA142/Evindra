@@ -68,7 +68,7 @@ export function DataFlowCanvas() {
             ctx.beginPath();
             ctx.moveTo(nodes[i].x, nodes[i].y);
             ctx.lineTo(nodes[j].x, nodes[j].y);
-            ctx.strokeStyle = `rgba(18, 179, 163, ${alpha})`; // brand-500 (#12b3a3)
+            ctx.strokeStyle = `rgba(118,255,3,${alpha})`; // brand-500 (#76FF03)
             ctx.lineWidth = 1;
             ctx.stroke();
 
@@ -80,7 +80,7 @@ export function DataFlowCanvas() {
 
               ctx.beginPath();
               ctx.arc(px, py, 1.2, 0, Math.PI * 2);
-              ctx.fillStyle = `rgba(51, 199, 182, ${alpha * 1.6})`; // brand-400 (#33c7b6)
+              ctx.fillStyle = `rgba(140,255,32,${alpha * 1.6})`; // brand-400 (#8CFF20)
               ctx.fill();
             }
           }
@@ -91,7 +91,7 @@ export function DataFlowCanvas() {
       for (const node of nodes) {
         ctx.beginPath();
         ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(51, 199, 182, 0.4)"; // brand-400
+        ctx.fillStyle = "rgba(140,255,32,0.4)"; // brand-400
         ctx.fill();
 
         if (!prefersReducedMotion) {

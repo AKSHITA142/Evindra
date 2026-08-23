@@ -23,7 +23,7 @@ export default function OverviewPage({
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <Spinner size="lg" />
-        <p className="text-sm text-gray-400 mt-4">Loading dataset profile and schema statistics…</p>
+        <p className="text-sm text-text-secondary mt-4">Loading dataset profile and schema statistics…</p>
       </div>
     );
   }
@@ -54,8 +54,8 @@ export default function OverviewPage({
             Back
           </Button>
           <div>
-            <h1 className="text-xl font-bold text-gray-100">{dataset.filename}</h1>
-            <p className="text-xs text-gray-400 font-mono">Dataset ID: {dataset.dataset_id}</p>
+            <h1 className="text-xl font-bold text-text">{dataset.filename}</h1>
+            <p className="text-xs text-text-secondary font-mono">Dataset ID: {dataset.dataset_id}</p>
           </div>
         </div>
 

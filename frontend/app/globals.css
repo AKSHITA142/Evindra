@@ -10,55 +10,55 @@
 /* ── Tailwind v4 theme tokens (generates utilities automatically:
    bg-surface-1, text-text-secondary, rounded-md, shadow-md, etc.) ── */
 @theme {
-  /* Surfaces — tonal graphite scale (neutral, not blue-tinted) */
-  --color-bg: #0a0a0b;           /* deepest app background */
-  --color-surface-1: #111113;    /* primary workspace surface */
-  --color-surface-2: #18181b;    /* secondary surface (cards) */
-  --color-surface-3: #212124;    /* elevated surface (modals, popovers) */
-  --color-surface-4: #29292d;    /* interactive/hover surface */
-  --color-input: #1a1a1d;        /* form control surface */
+  /* Surfaces — near-black graphite scale (NVIDIA-inspired, neutral) */
+  --color-bg: #080C0E;           /* deepest app background */
+  --color-surface-1: #111214;    /* primary workspace surface */
+  --color-surface-2: #181A1D;    /* secondary surface (cards) */
+  --color-surface-3: #1C1F22;    /* elevated surface (modals, popovers) */
+  --color-surface-4: #232428;    /* interactive/hover surface */
+  --color-input: #181A1D;        /* form control surface */
 
-  /* Borders */
-  --color-border-subtle: rgba(255, 255, 255, 0.06);
-  --color-border: rgba(255, 255, 255, 0.10);
-  --color-border-strong: rgba(255, 255, 255, 0.18);
+  /* Borders — thin solid graphite lines (contrast comes from borders, not shadows) */
+  --color-border-subtle: #1B1E21;
+  --color-border: #232428;
+  --color-border-strong: #303338;
 
   /* Text */
-  --color-text: #f2f2f0;
-  --color-text-secondary: #a6a6a2;
-  --color-text-muted: #888884; /* High contrast: 5.8:1 on dark surfaces */
+  --color-text: #E6E7E9;
+  --color-text-secondary: #A1A4AA;
+  --color-text-muted: #70757C; /* High contrast on graphite */
 
 
-  /* Brand — signal teal (distinct from success-green, warning-amber, error-red) */
-  --color-brand-100: #c9f5ef;
-  --color-brand-300: #6bdbcd;
-  --color-brand-400: #33c7b6;
-  --color-brand-500: #12b3a3;   /* primary */
-  --color-brand-600: #0d8f83;
-  --color-brand-700: #0a6e65;
+  /* Brand — restrained neon lime (accent only; ~85% of UI stays neutral) */
+  --color-brand-100: #d6ffb0;
+  --color-brand-300: #a6ff5c;
+  --color-brand-400: #8CFF20;   /* hover */
+  --color-brand-500: #76FF03;   /* primary */
+  --color-brand-600: #63D900;   /* active */
+  --color-brand-700: #4fae00;
 
   /* Semantic */
-  --color-success-400: #4ade80;
-  --color-success-500: #22c55e;
-  --color-success-600: #16a34a;
+  --color-success-400: #33eb8f;
+  --color-success-500: #00E676;
+  --color-success-600: #00b85e;
 
-  --color-warning-400: #fbbf24;
-  --color-warning-500: #f59e0b;
-  --color-warning-600: #d97706;
+  --color-warning-400: #ffce3a;
+  --color-warning-500: #FFC107;
+  --color-warning-600: #e0a800;
 
-  --color-error-400: #f87171;
-  --color-error-500: #ef4444;
-  --color-error-600: #dc2626;
+  --color-error-400: #ff6b3d;
+  --color-error-500: #FF3D00;
+  --color-error-600: #d63400;
 
-  --color-info-400: #94a3b8;
-  --color-info-500: #7c8ba1;
+  --color-info-400: #5ba3f7;
+  --color-info-500: #3892F6;
 
-  /* Radius — sophisticated, not toy-like */
+  /* Radius — restrained, technical (not toy-like) */
   --radius-xs: 4px;
   --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
 
   /* Fonts (kept from layout.tsx font vars) */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
@@ -68,28 +68,28 @@
 /* ── Plain CSS custom properties (for non-Tailwind consumers:
    Recharts inline styles, canvas/3D materials, etc.) ── */
 :root {
-  --bg: #0a0a0b;
-  --surface-1: #111113;
-  --surface-2: #18181b;
-  --surface-3: #212124;
-  --surface-4: #29292d;
+  --bg: #080C0E;
+  --surface-1: #111214;
+  --surface-2: #181A1D;
+  --surface-3: #1C1F22;
+  --surface-4: #232428;
 
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border: rgba(255, 255, 255, 0.10);
-  --border-strong: rgba(255, 255, 255, 0.18);
+  --border-subtle: #1B1E21;
+  --border: #232428;
+  --border-strong: #303338;
 
-  --text: #f2f2f0;
-  --text-secondary: #a6a6a2;
-  --text-muted: #888884;
+  --text: #E6E7E9;
+  --text-secondary: #A1A4AA;
+  --text-muted: #70757C;
 
-  --brand: #12b3a3;
-  --brand-light: #33c7b6;
-  --brand-dark: #0d8f83;
+  --brand: #76FF03;
+  --brand-light: #8CFF20;
+  --brand-dark: #63D900;
 
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --info: #7c8ba1;
+  --success: #00E676;
+  --warning: #FFC107;
+  --error: #FF3D00;
+  --info: #3892F6;
 
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -103,7 +103,7 @@
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
 
   /* Reserved for rare, deliberate emphasis only (not default state) */
-  --ring-brand: 0 0 0 1px var(--brand), 0 0 16px rgba(18, 179, 163, 0.18);
+  --ring-brand: 0 0 0 1px var(--brand), 0 0 16px rgba(118, 255, 3, 0.15);
 
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-default: 220ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -213,11 +213,11 @@ body {
 }
 
 /* ── Status Badge colours (semantic, muted-on-dark) ── */
-.status-queued    { color: var(--text-secondary); background: rgba(166, 166, 162, 0.12); }
-.status-running   { color: var(--brand-light);     background: rgba(18, 179, 163, 0.14); }
-.status-completed { color: var(--success);         background: rgba(34, 197, 94, 0.14); }
-.status-failed    { color: var(--error);           background: rgba(239, 68, 68, 0.14); }
-.status-cancelled { color: var(--warning);         background: rgba(245, 158, 11, 0.14); }
+.status-queued    { color: var(--text-secondary); background: rgba(160, 164, 170, 0.12); }
+.status-running   { color: var(--brand-500, #76FF03); background: rgba(118, 255, 3, 0.12); }
+.status-completed { color: var(--success);         background: rgba(0, 230, 118, 0.10); }
+.status-failed    { color: var(--error);           background: rgba(255, 61, 0, 0.10); }
+.status-cancelled { color: var(--warning);         background: rgba(255, 193, 7, 0.10); }
 
 /* ── Focus ring ── */
 *:focus-visible {
@@ -298,40 +298,38 @@ hr, .divider {
 
 /* Gradient headline text (landing hero) */
 .gradient-text {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
+  background: linear-gradient(120deg, #E6E7E9 0%, #76FF03 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Glass card (used on landing + timeline) */
+/* Technical panel (formerly glass — now a solid graphite surface, no blur) */
 .glass-card {
-  background: rgba(24, 24, 27, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-xs);
   transition: border-color var(--transition-default), box-shadow var(--transition-default);
 }
 
 .glass-card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: var(--shadow-lg);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ── Evindra landing atmosphere ─────────────────────────────── */
 .hero-grid {
   background-image:
-    linear-gradient(rgba(107, 219, 205, 0.045) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(107, 219, 205, 0.045) 1px, transparent 1px);
+    linear-gradient(rgba(118, 255, 3, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(118, 255, 3, 0.04) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: linear-gradient(to bottom, black 15%, transparent 92%);
 }
 
 .hero-vignette {
   background:
-    radial-gradient(circle at 72% 42%, rgba(18, 179, 163, 0.12), transparent 28%),
+    radial-gradient(circle at 72% 42%, rgba(118, 255, 3, 0.10), transparent 28%),
     linear-gradient(to bottom, transparent 55%, var(--bg));
 }
 
@@ -346,6 +344,117 @@ div[style*="position: fixed; z-index: 9999; bottom:"] {
   visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
+}
+
+/* ── lets-scroll engine — dark graphite + lime chrome overrides ──────────────
+   The engine ships light-theme defaults (white translucent nav, ink-colored
+   CTA). These unlayered rules win over its @layer sw block and fix contrast +
+   swap in the real Evidra logo mark. */
+.sw-root {
+  --sw-bg: #080C0E;
+  --sw-ink: #E6E7E9;
+  --sw-ink-soft: #A1A4AA;
+  --sw-accent: #76FF03;
+}
+/* Section nav: dark graphite pill, readable secondary text */
+.sw-nav {
+  background: rgba(17, 18, 20, 0.72) !important;
+  border: 1px solid var(--border) !important;
+  backdrop-filter: blur(10px);
+}
+.sw-nav__item { color: var(--text-secondary); }
+.sw-nav__item:hover { color: var(--text); }
+.sw-nav__item.is-active { color: #080C0E !important; background: var(--brand) !important; }
+/* Top CTA: lime button with dark text (was white-on-near-white) */
+.sw-topcta {
+  color: #080C0E !important;
+  background: var(--brand) !important;
+  box-shadow: 0 0 16px rgba(118, 255, 3, 0.18);
+  transition: background 180ms ease;
+}
+.sw-topcta:hover { background: var(--brand-light) !important; }
+/* Final-section CTA buttons (in the champion scene): primary was white-on-near-white */
+.sw-btn--primary {
+  color: #080C0E !important;
+  background: var(--brand) !important;
+  box-shadow: 0 0 18px rgba(118, 255, 3, 0.2);
+}
+.sw-btn--primary:hover { background: var(--brand-light) !important; }
+.sw-btn--ghost {
+  color: var(--text) !important;
+  border: 1.5px solid var(--border-strong) !important;
+}
+.sw-btn--ghost:hover { border-color: var(--brand) !important; color: var(--brand) !important; }
+/* Route rail label: dark pill */
+.sw-route__label {
+  color: var(--text) !important;
+  background: rgba(17, 18, 20, 0.85) !important;
+  border: 1px solid var(--border) !important;
+}
+/* Brand: real Evidra logo mark + light wordmark */
+.sw-brand__name { color: var(--text); }
+.sw-brand__mark {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 8px !important;
+  background: url('/evidra-icon-v2.png') center / contain no-repeat !important;
+  box-shadow: none !important;
+}
+/* Scroll hint — a clear, gently-bobbing "scroll" affordance (page is manual-scroll).
+   The engine already animates the wheel dot inside the mouse; we add a soft bob and
+   a lime glow so users notice it, plus a bouncing chevron beneath. */
+.sw-hint {
+  color: var(--text-secondary) !important;
+  animation: sw-hint-bob 2s ease-in-out infinite;
+}
+.sw-hint i {
+  border-color: color-mix(in srgb, var(--brand) 60%, transparent) !important;
+  box-shadow: 0 0 14px rgba(118, 255, 3, 0.16);
+}
+.sw-hint::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid var(--brand);
+  border-bottom: 2px solid var(--brand);
+  transform: rotate(45deg);
+  opacity: 0.8;
+  animation: sw-hint-chev 1.7s ease-in-out infinite;
+}
+@keyframes sw-hint-bob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(6px); }
+}
+@keyframes sw-hint-chev {
+  0% { opacity: 0; transform: rotate(45deg) translateY(-3px); }
+  50% { opacity: 0.9; }
+  100% { opacity: 0; transform: rotate(45deg) translateY(3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sw-hint { animation: none; }
+  .sw-hint::after { animation: none; opacity: 0.6; }
+}
+
+/* ── Dashboard ambient background — subtle drifting lime glow + faint grid ─────
+   Applied to the app shell container so it sits behind all content (cards/sidebar
+   have solid surfaces and cover it; it shows through the empty workspace areas).
+   Kept extremely subtle so it never competes with data. */
+.dash-shell-bg {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(55vw 55vh at 12% 16%, rgba(118, 255, 3, 0.055), transparent 62%),
+    radial-gradient(48vw 48vh at 88% 84%, rgba(118, 255, 3, 0.038), transparent 62%),
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: auto, auto, 46px 46px, 46px 46px;
+  background-attachment: fixed;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .dash-shell-bg { animation: dash-drift 22s ease-in-out infinite alternate; }
+}
+@keyframes dash-drift {
+  from { background-position: 0% 0%, 100% 100%, 0 0, 0 0; }
+  to   { background-position: 7% 5%, 93% 95%, 0 0, 0 0; }
 }
 
 

@@ -445,11 +445,11 @@ export default function DashboardPage() {
                     const total = dash?.total_jobs || 1;
                     const pct = Math.round((count / total) * 100);
                     const colorMap: Record<string, { dot: string; bar: string; text: string }> = {
-                      completed: { dot: "bg-emerald-500", bar: "bg-emerald-500", text: "text-emerald-400" },
-                      running: { dot: "bg-blue-500 animate-pulse", bar: "bg-blue-500", text: "text-blue-400" },
-                      failed: { dot: "bg-rose-500", bar: "bg-rose-500", text: "text-rose-400" },
-                      queued: { dot: "bg-amber-500", bar: "bg-amber-500", text: "text-amber-400" },
-                      cancelled: { dot: "bg-slate-500", bar: "bg-slate-500", text: "text-slate-400" },
+                      completed: { dot: "bg-success-500", bar: "bg-success-500", text: "text-success-400" },
+                      running: { dot: "bg-brand-500 animate-pulse", bar: "bg-brand-500", text: "text-brand-500" },
+                      failed: { dot: "bg-error-500", bar: "bg-error-500", text: "text-error-400" },
+                      queued: { dot: "bg-warning-500", bar: "bg-warning-500", text: "text-warning-400" },
+                      cancelled: { dot: "bg-surface-4", bar: "bg-surface-4", text: "text-text-muted" },
                     };
                     const styling = colorMap[status.toLowerCase()] || {
                       dot: "bg-brand-500",

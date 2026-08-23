@@ -17,7 +17,7 @@ export function ShellLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-bg">
+    <div className="dash-shell-bg flex h-screen overflow-hidden">
       {/* Desktop sidebar */}
       <Sidebar />
 

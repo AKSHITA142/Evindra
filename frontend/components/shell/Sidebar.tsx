@@ -18,6 +18,7 @@ import {
   LayoutDashboard,
   Lock,
   AlertCircle,
+  Info,
 } from "lucide-react";
 import { useDashboard } from "@/hooks/useResearch";
 
@@ -32,6 +33,7 @@ interface NavItemSpec {
 const PRIMARY_ITEMS: NavItemSpec[] = [
   { baseHref: "/overview", icon: LayoutDashboard, label: "Overview" },
   { baseHref: "/upload", icon: Upload, label: "New Run" },
+  { baseHref: "/about", icon: Info, label: "What We Serve" },
 ];
 
 const MISSION_ITEMS: NavItemSpec[] = [
@@ -126,7 +128,7 @@ function NavButton({
       >
         {/* Active indicator bar */}
         {active && (
-          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-brand-500 shadow-[0_0_8px_rgba(18,179,163,0.6)]" />
+          <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-brand-500 shadow-[0_0_8px_rgba(118,255,3,0.6)]" />
         )}
 
         <Icon
@@ -208,7 +210,7 @@ export function Sidebar() {
           <Link href="/overview" className="flex items-center justify-start min-w-0">
             {collapsed ? (
               <Image
-                src="/evidra-first-logo.png"
+                src="/evidra-icon-v2.png"
                 alt="Evidra"
                 width={200}
                 height={200}
@@ -217,7 +219,7 @@ export function Sidebar() {
               />
             ) : (
               <Image
-                src="/evidra-second-logo.png"
+                src="/evidra-logo-v2.png"
                 alt="Evidra"
                 width={947}
                 height={380}
@@ -420,7 +422,7 @@ export function MobileDrawer({
             <div className="flex items-center justify-between px-4 py-3 border-b border-border-subtle h-18 shrink-0">
               <Link href="/overview" onClick={onClose} className="flex items-center">
                 <Image
-                  src="/evidra-second-logo.png"
+                  src="/evidra-logo-v2.png"
                   alt="Evidra"
                   width={947}
                   height={380}

@@ -41,7 +41,7 @@ export function LandingNav() {
       <nav className="mx-auto flex h-22 max-w-7xl items-center justify-between px-4 sm:px-6" aria-label="Primary navigation">
         <Link href="/" prefetch={true} className="flex items-center cursor-pointer">
           <Image
-            src="/evidra-second-logo.png"
+            src="/evidra-logo-v2.png"
             alt="Evidra"
             width={947}
             height={380}

@@ -443,8 +443,8 @@ print(f"Optimal Model Test Score: {test_score:.4f}")
                   >
                     {copiedCode ? (
                       <>
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="text-emerald-400 font-bold">Copied!</span>
+                        <Check className="w-3.5 h-3.5 text-success-400" />
+                        <span className="text-success-400 font-bold">Copied!</span>
                       </>
                     ) : (
                       <>
@@ -620,7 +620,7 @@ print(f"Optimal Model Test Score: {test_score:.4f}")
                 </p>
                 <span className="text-[10px] text-text-muted font-mono">Real-Time Generated Audit Report</span>
               </div>
-              <div className="rounded-xl overflow-hidden border border-border bg-slate-950 shadow-inner h-[600px] w-full">
+              <div className="rounded-xl overflow-hidden border border-border bg-bg shadow-inner h-[600px] w-full">
                 <iframe
                   src={`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"}/api/v1/reports/${jobId}/html`}
                   className="w-full h-full border-0"

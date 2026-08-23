@@ -157,8 +157,8 @@ export default function KnowledgePage({
               >
                 {copiedConfig ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-emerald-400 font-bold">Copied!</span>
+                    <Check className="w-3.5 h-3.5 text-success-400" />
+                    <span className="text-success-400 font-bold">Copied!</span>
                   </>
                 ) : (
                   <>
