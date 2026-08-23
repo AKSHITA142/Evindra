@@ -3,7 +3,7 @@
 Populate RAG Embeddings Script for Evindra
 
 Reads rag_documents records from Supabase where embedding IS NULL,
-generates 1536-dimensional dense vector embeddings via EmbeddingService (Gemini gemini-embedding-001),
+generates 1536-dimensional dense vector embeddings via EmbeddingService (Gemini gemini-embedding-2),
 and updates ONLY the embedding column for each record in Supabase.
 
 Usage:

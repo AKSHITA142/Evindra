@@ -12,21 +12,22 @@ from backend.core.config import get_settings
 
 logger = logging.getLogger("datapilot.rag")
 
+PRIMARY_EMBEDDING_MODEL = "gemini-embedding-2"
 EXPECTED_DIMENSION = 1536
-MODEL_FALLBACK_CHAIN = ["gemini-embedding-2", "gemini-embedding-2-preview", "gemini-embedding-001"]
 
 
 class EmbeddingService:
     """
     RAG Embedding Service responsible for transforming text into dense vector embeddings
-    using Google Gemini Embedding models via the official google-genai SDK.
-    Matching Supabase pgvector column dimension (1536).
+    using Google Gemini Embedding model (gemini-embedding-2) via the official google-genai SDK.
+    Strictly enforced to match Supabase pgvector column dimension (1536).
+    Cross-model fallback is disabled to prevent vector space contamination.
     """
 
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model_name: str = "gemini-embedding-2",
+        model_name: str = PRIMARY_EMBEDDING_MODEL,
         expected_dimension: int = EXPECTED_DIMENSION,
     ):
         settings = get_settings()
@@ -49,8 +50,8 @@ class EmbeddingService:
 
     def generate_embeddings_batch(self, texts: List[str], max_retries: int = 5) -> List[List[float]]:
         """
-        Generates 1536-dimensional embedding vectors for a batch of text payloads.
-        Includes automatic model fallback across Gemini embedding models (gemini-embedding-2 -> gemini-embedding-2-preview -> gemini-embedding-001).
+        Generates 1536-dimensional embedding vectors for a batch of text payloads using gemini-embedding-2.
+        Retries on transient rate limits (HTTP 429) using exponential backoff without switching models.
         """
         if not texts:
             return []
@@ -58,44 +59,40 @@ class EmbeddingService:
         cleaned_texts = [t if (t and t.strip()) else "empty" for t in texts]
         cfg = types.EmbedContentConfig(output_dimensionality=self.expected_dimension)
 
-        models_to_try = [self.model_name] + [m for m in MODEL_FALLBACK_CHAIN if m != self.model_name]
-
-        for m_name in models_to_try:
-            for attempt in range(1, max_retries + 1):
-                try:
-                    res = self.client.models.embed_content(
-                        model=m_name,
-                        contents=cleaned_texts if len(cleaned_texts) > 1 else cleaned_texts[0],
-                        config=cfg,
+        last_exception = None
+        for attempt in range(1, max_retries + 1):
+            try:
+                res = self.client.models.embed_content(
+                    model=self.model_name,
+                    contents=cleaned_texts if len(cleaned_texts) > 1 else cleaned_texts[0],
+                    config=cfg,
+                )
+                return self._extract_batch_values(res, expected_count=len(cleaned_texts))
+            except (APIError, ClientError) as e:
+                last_exception = e
+                err_msg = str(e)
+                if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg or "Quota exceeded" in err_msg:
+                    match = re.search(r"Please retry in (\d+(?:\.\d+)?)s", err_msg)
+                    parsed_sec = math.ceil(float(match.group(1))) + 2 if match else 5 * (2 ** (attempt - 1))
+                    logger.warning(
+                        f"Embedding Model '{self.model_name}' Rate Limit (429) hit (attempt {attempt}/{max_retries}). "
+                        f"Retrying in {parsed_sec}s on same model..."
                     )
-                    return self._extract_batch_values(res, expected_count=len(cleaned_texts))
-                except (APIError, ClientError) as e:
-                    err_msg = str(e)
-                    if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg or "Quota exceeded" in err_msg:
-                        match = re.search(r"Please retry in (\d+(?:\.\d+)?)s", err_msg)
-                        parsed_sec = math.ceil(float(match.group(1))) + 2 if match else 10 * attempt
-                        logger.warning(
-                            f"Model '{m_name}' Rate Limit (429) hit (attempt {attempt}/{max_retries}). "
-                            f"Waiting {parsed_sec}s or trying fallback model..."
-                        )
-                        if attempt < max_retries:
-                            time.sleep(min(parsed_sec, 10))
-                            continue
-                        else:
-                            logger.warning(f"Model '{m_name}' exhausted retries; switching to fallback model.")
-                            break
+                    if attempt < max_retries:
+                        time.sleep(min(parsed_sec, 15))
+                        continue
+                else:
+                    logger.error(f"Gemini API error during embedding generation with '{self.model_name}': {e}")
+                    raise RuntimeError(f"Embedding generation with model '{self.model_name}' failed: {e}") from e
+            except Exception as exc:
+                last_exception = exc
+                logger.error(f"Unexpected error during embedding generation with '{self.model_name}': {exc}")
+                raise RuntimeError(f"Unexpected error during embedding generation with '{self.model_name}': {exc}") from exc
 
-                    if "404" in err_msg or "NOT_FOUND" in err_msg:
-                        logger.warning(f"Model '{m_name}' not available; trying next model in chain.")
-                        break
-                    else:
-                        logger.error(f"Gemini API error during embedding generation with '{m_name}': {e}")
-                        break
-                except Exception as exc:
-                    logger.error(f"Unexpected error during embedding generation with '{m_name}': {exc}")
-                    break
+        raise RuntimeError(
+            f"Embedding generation with configured model '{self.model_name}' failed after {max_retries} retries: {last_exception}"
+        )
 
-        raise RuntimeError(f"Embedding generation failed across all models: {models_to_try}")
 
     def _extract_batch_values(self, res, expected_count: int = 1) -> List[List[float]]:
         """Extracts list of vector float lists from EmbedContentResponse object."""
