@@ -10,7 +10,7 @@ if WORKSPACE_ROOT not in sys.path:
 
 # Cloud-dependency guard — see module docstring in test_context_builder.py
 try:
-    import google.genai  # noqa: F401
+    import google.genai  # noqa: F401  # pyrefly: ignore[missing-import]
     _google_genai_available = True
 except ImportError:
     _google_genai_available = False

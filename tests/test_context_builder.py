@@ -14,7 +14,7 @@ if WORKSPACE_ROOT not in sys.path:
 # They are intentionally excluded from CI/offline runs.
 # ---------------------------------------------------------------------------
 try:
-    import google.genai  # noqa: F401
+    import google.genai  # noqa: F401  # pyrefly: ignore[missing-import]
     _google_genai_available = True
 except ImportError:
     _google_genai_available = False
