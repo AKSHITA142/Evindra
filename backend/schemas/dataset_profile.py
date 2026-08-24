@@ -78,6 +78,7 @@ class DatasetProfile(SemanticProfile):
     class_distribution: Optional[Dict[str, float]] = None
     imbalance_ratio: Optional[float] = None
     feature_target_relationships: Dict[str, Any] = Field(default_factory=dict)
+    problem_type: str = "classification"
     problem_type_candidates: List[str] = Field(default_factory=list)
     dataset_fingerprint: Optional[str] = None
     detailed_column_profiles: List[ColumnProfileExtended] = Field(default_factory=list)
@@ -113,6 +114,33 @@ class DatasetProfile(SemanticProfile):
             self.target_candidates = self.target_candidate_list
         elif not self.target_candidate_list and self.target_candidates:
             self.target_candidate_list = self.target_candidates
+
+        # Auto-populate column type lists from detailed_column_profiles when not explicitly set
+        if self.detailed_column_profiles:
+            if not self.numeric_columns:
+                self.numeric_columns = [
+                    c.name for c in self.detailed_column_profiles
+                    if getattr(c, "normalized_dtype", "") in ("numeric", "integer", "float")
+                    and c.name != self.target_column
+                ]
+            if not self.categorical_columns:
+                self.categorical_columns = [
+                    c.name for c in self.detailed_column_profiles
+                    if getattr(c, "normalized_dtype", "") in ("categorical", "string", "category", "object")
+                    and c.name != self.target_column
+                ]
+            if not self.datetime_columns:
+                self.datetime_columns = [
+                    c.name for c in self.detailed_column_profiles
+                    if getattr(c, "normalized_dtype", "") in ("datetime", "date", "time")
+                    and c.name != self.target_column
+                ]
+            if not self.text_columns:
+                self.text_columns = [
+                    c.name for c in self.detailed_column_profiles
+                    if getattr(c, "normalized_dtype", "") == "text"
+                    and c.name != self.target_column
+                ]
 
     def to_dict(self) -> Dict[str, Any]:
         """Returns a deterministic JSON-serializable dictionary representation."""

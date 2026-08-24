@@ -246,7 +246,11 @@ class DecisionOrchestrator:
                 logger.info(f"No relevant RAG scenarios found for domain '{domain.value}'.")
                 return None, []
 
-            reranked = rerank_scenarios(scenarios)
+            try:
+                reranked = rerank_scenarios(scenarios)
+            except Exception as re_err:
+                logger.debug(f"Reranking unavailable ({re_err}); using retrieval order.")
+                reranked = scenarios
             top_scenario = reranked[0] if reranked else scenarios[0]
 
             rag_score = float(top_scenario.get("final_score") or top_scenario.get("similarity_score") or 0.0)

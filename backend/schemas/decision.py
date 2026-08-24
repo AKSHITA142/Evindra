@@ -1,7 +1,8 @@
 import uuid
+import hashlib
 from enum import Enum
 from typing import Any, Dict, List, Optional
-from pydantic import Field, ConfigDict
+from pydantic import Field, ConfigDict, model_validator
 from backend.schemas.base import BaseSchema
 
 
@@ -50,7 +51,7 @@ class DecisionResult(BaseSchema):
     Standardized internal decision object used by ALL decision-producing layers
     (RuleEngine, RAG, LLM, User Fallback).
     """
-    decision_id: str = Field(default_factory=lambda: f"dec_{uuid.uuid4().hex[:12]}")
+    decision_id: str = Field(default="")
     domain: DecisionDomain
     decision: str
     confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score between 0.0 and 1.0")
@@ -94,6 +95,13 @@ class DecisionResult(BaseSchema):
                 if member.value.lower() == v_lower or member.name.lower() == v_lower:
                     return member
         return v
+
+    @model_validator(mode="after")
+    def _ensure_deterministic_decision_id(self) -> "DecisionResult":
+        if not self.decision_id:
+            key = f"{self.domain}|{self.decision}|{self.source}|{self.confidence:.4f}"
+            self.decision_id = f"dec_{hashlib.sha256(key.encode()).hexdigest()[:12]}"
+        return self
 
     def to_dict(self) -> Dict[str, Any]:
         """Returns deterministic JSON-serializable dictionary representation."""

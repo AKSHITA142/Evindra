@@ -1,7 +1,8 @@
 import uuid
+import hashlib
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from backend.schemas.base import BaseSchema
 from backend.schemas.decision import DecisionDomain, DecisionSource, DecisionResult
@@ -10,8 +11,10 @@ from backend.schemas.decision import DecisionDomain, DecisionSource, DecisionRes
 class PreprocessingStep(BaseSchema):
     """
     A single executable preprocessing step in a PreprocessingPlan, linked back to its decision source.
+    step_id is deterministic: derived from stage + action + sorted columns so identical steps
+    from identical inputs always produce the same id.
     """
-    step_id: str = Field(default_factory=lambda: f"step_{uuid.uuid4().hex[:10]}")
+    step_id: str = Field(default="")
     step_number: int
     stage: str = "PREPROCESSING"  # DATA_INGESTION, TARGET_SEPARATION, LEAKAGE_REMOVAL, etc.
     domain: DecisionDomain
@@ -25,6 +28,13 @@ class PreprocessingStep(BaseSchema):
     reasoning: str = ""
     requires_validation: bool = True
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def _ensure_deterministic_step_id(self) -> "PreprocessingStep":
+        if not self.step_id:
+            key = f"{self.stage}|{self.action}|{','.join(sorted(self.columns))}|{self.step_number}"
+            self.step_id = f"step_{hashlib.sha256(key.encode()).hexdigest()[:10]}"
+        return self
 
 
 class PreprocessingPlan(BaseSchema):

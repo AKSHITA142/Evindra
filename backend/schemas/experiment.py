@@ -50,6 +50,8 @@ class ExperimentSpec(BaseSchema):
 class ExperimentPlan(BaseSchema):
     """Experiment plan produced by the StrategyPlannerAgent."""
     plan_id: str = Field(default_factory=lambda: f"plan_{uuid.uuid4().hex[:8]}")
+    mission: str = ""
+    experiment_budget: int = 3
     experiments: List[ExperimentSpec] = Field(default_factory=list)
 
 
