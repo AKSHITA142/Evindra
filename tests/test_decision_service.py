@@ -7,6 +7,15 @@ WORKSPACE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if WORKSPACE_ROOT not in sys.path:
     sys.path.insert(0, WORKSPACE_ROOT)
 
+# Cloud-dependency guard — see module docstring in test_context_builder.py
+try:
+    import google.genai  # noqa: F401
+    _google_genai_available = True
+except ImportError:
+    _google_genai_available = False
+
+_SKIP_REASON = "google-genai cloud package not installed (pip install google-genai)"
+
 from backend.services.rag.reranker_service import retrieve_and_rerank_scenarios
 from backend.services.rag.context_builder import build_rag_evidence_package
 from backend.services.rag.decision_service import (
@@ -16,6 +25,7 @@ from backend.services.rag.decision_service import (
 )
 
 
+@pytest.mark.skipif(not _google_genai_available, reason=_SKIP_REASON)
 def test_end_to_end_rag_decision_missing_values():
     """
     Tests full end-to-end RAG pipeline for Missing Value Imputation.
@@ -72,6 +82,7 @@ def test_end_to_end_rag_decision_missing_values():
         assert cited_id in retrieved_ids, f"Cited ID '{cited_id}' not found in retrieved scenario pool {retrieved_ids}"
 
 
+@pytest.mark.skipif(not _google_genai_available, reason=_SKIP_REASON)
 def test_end_to_end_rag_decision_categorical_encoding():
     """
     Tests full end-to-end RAG pipeline for Categorical Encoding.

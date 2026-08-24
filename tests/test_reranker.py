@@ -7,12 +7,22 @@ WORKSPACE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if WORKSPACE_ROOT not in sys.path:
     sys.path.insert(0, WORKSPACE_ROOT)
 
+# Cloud-dependency guard — see module docstring in test_context_builder.py
+try:
+    import google.genai  # noqa: F401
+    _google_genai_available = True
+except ImportError:
+    _google_genai_available = False
+
+_SKIP_REASON = "google-genai cloud package not installed (pip install google-genai)"
+
 from backend.services.rag.reranker_service import (
     ScenarioRerankerService,
     retrieve_and_rerank_scenarios,
 )
 
 
+@pytest.mark.skipif(not _google_genai_available, reason=_SKIP_REASON)
 def test_reranker_missing_values():
     """
     Tests multi-signal reranking for Missing Value Imputation query.
@@ -61,6 +71,7 @@ def test_reranker_missing_values():
         print(f"    Text: {res['retrieval_text'].replace('\n', ' ')[:90]}...\n")
 
 
+@pytest.mark.skipif(not _google_genai_available, reason=_SKIP_REASON)
 def test_reranker_categorical_encoding():
     """
     Tests multi-signal reranking for Categorical Encoding query.
@@ -100,6 +111,7 @@ def test_reranker_categorical_encoding():
         print(f"    Explanation: {res['rank_explanation']}\n")
 
 
+@pytest.mark.skipif(not _google_genai_available, reason=_SKIP_REASON)
 def test_reranker_custom_weights():
     """
     Tests reranking with custom signal weights prioritizing validation quality.

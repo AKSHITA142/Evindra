@@ -7,9 +7,19 @@ WORKSPACE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if WORKSPACE_ROOT not in sys.path:
     sys.path.insert(0, WORKSPACE_ROOT)
 
+# Cloud-dependency guard — see module docstring in test_context_builder.py
+try:
+    import google.genai  # noqa: F401
+    _google_genai_available = True
+except ImportError:
+    _google_genai_available = False
+
+_SKIP_REASON = "google-genai cloud package not installed (pip install google-genai)"
+
 from backend.services.rag.hybrid_retrieval_service import HybridRetrievalService, retrieve_relevant_scenarios
 
 
+@pytest.mark.skipif(not _google_genai_available, reason=_SKIP_REASON)
 def test_hybrid_missing_values():
     """
     Tests Hybrid Retrieval with structured context for Missing Value Imputation.
@@ -58,6 +68,7 @@ def test_hybrid_missing_values():
     assert results[0]["structured_score"] >= 0.75, f"Expected high structured match score, got {results[0]['structured_score']}"
 
 
+@pytest.mark.skipif(not _google_genai_available, reason=_SKIP_REASON)
 def test_hybrid_categorical_encoding():
     """
     Tests Hybrid Retrieval with structured context for Categorical Encoding.
@@ -100,6 +111,7 @@ def test_hybrid_categorical_encoding():
     assert results[0]["structured_score"] >= 0.75, f"Expected high structured match score, got {results[0]['structured_score']}"
 
 
+@pytest.mark.skipif(not _google_genai_available, reason=_SKIP_REASON)
 def test_hybrid_empty_context_graceful_fallback():
     """
     Tests Hybrid Retrieval with empty / None context.

@@ -7,6 +7,15 @@ WORKSPACE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if WORKSPACE_ROOT not in sys.path:
     sys.path.insert(0, WORKSPACE_ROOT)
 
+# Cloud-dependency guard — see module docstring in test_context_builder.py
+try:
+    import google.genai  # noqa: F401
+    _google_genai_available = True
+except ImportError:
+    _google_genai_available = False
+
+_SKIP_REASON = "google-genai cloud package not installed (pip install google-genai)"
+
 from backend.services.rag.reranker_service import retrieve_and_rerank_scenarios
 from backend.services.rag.context_builder import build_rag_evidence_package
 from backend.services.rag.decision_service import (
@@ -21,6 +30,7 @@ from backend.services.rag.recommendation_validator import (
 )
 
 
+@pytest.mark.skipif(not _google_genai_available, reason=_SKIP_REASON)
 def test_validate_valid_recommendation():
     """
     Tests validation of a valid, evidence-grounded recommendation for Missing Value Imputation.
@@ -73,6 +83,7 @@ def test_validate_valid_recommendation():
     assert report.executable_pipeline_spec["target_column"] == "LotFrontage"
 
 
+@pytest.mark.skipif(not _google_genai_available, reason=_SKIP_REASON)
 def test_validate_type_mismatch_recommendation():
     """
     Tests validation of an incompatible recommendation (e.g. Robust Scaling applied to a Categorical column).

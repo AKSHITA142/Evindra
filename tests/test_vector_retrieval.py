@@ -7,10 +7,20 @@ WORKSPACE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if WORKSPACE_ROOT not in sys.path:
     sys.path.insert(0, WORKSPACE_ROOT)
 
+# Cloud-dependency guard — see module docstring in test_context_builder.py
+try:
+    import google.genai  # noqa: F401
+    _google_genai_available = True
+except ImportError:
+    _google_genai_available = False
+
+_SKIP_REASON = "google-genai cloud package not installed (pip install google-genai)"
+
 from backend.services.rag.retrieval_service import VectorRetrievalService, search_similar_scenarios
 from backend.services.rag.embedding_service import EXPECTED_DIMENSION
 
 
+@pytest.mark.skipif(not _google_genai_available, reason=_SKIP_REASON)
 def test_missing_values_retrieval():
     """
     Tests vector retrieval for missing value imputation scenario query.
@@ -56,6 +66,7 @@ def test_missing_values_retrieval():
     assert "missing" in top_type or "imput" in results[0]["retrieval_text"].lower() or "missing" in results[0]["retrieval_text"].lower()
 
 
+@pytest.mark.skipif(not _google_genai_available, reason=_SKIP_REASON)
 def test_categorical_encoding_retrieval():
     """
     Tests vector retrieval for categorical encoding scenario query.

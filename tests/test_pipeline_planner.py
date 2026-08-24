@@ -8,6 +8,15 @@ WORKSPACE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if WORKSPACE_ROOT not in sys.path:
     sys.path.insert(0, WORKSPACE_ROOT)
 
+# Cloud-dependency guard — see module docstring in test_context_builder.py
+try:
+    import google.genai  # noqa: F401
+    _google_genai_available = True
+except ImportError:
+    _google_genai_available = False
+
+_SKIP_REASON = "google-genai cloud package not installed (pip install google-genai)"
+
 from backend.services.rag.pipeline_planner import (
     EvindraPipelinePlanner,
     EvindraPreprocessingPlan,
@@ -15,6 +24,7 @@ from backend.services.rag.pipeline_planner import (
 )
 
 
+@pytest.mark.skipif(not _google_genai_available, reason=_SKIP_REASON)
 def test_full_evindra_pipeline_planner():
     """
     Tests complete end-to-end Evindra RAG Pipeline Planner across a multi-issue dataset.

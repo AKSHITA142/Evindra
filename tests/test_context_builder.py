@@ -7,10 +7,25 @@ WORKSPACE_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if WORKSPACE_ROOT not in sys.path:
     sys.path.insert(0, WORKSPACE_ROOT)
 
+# ---------------------------------------------------------------------------
+# Cloud-dependency guard — skip entire module when google-genai is absent.
+# These tests exercise the live RAG embedding stack and require the
+# google-genai package plus valid cloud credentials at runtime.
+# They are intentionally excluded from CI/offline runs.
+# ---------------------------------------------------------------------------
+try:
+    import google.genai  # noqa: F401
+    _google_genai_available = True
+except ImportError:
+    _google_genai_available = False
+
+_SKIP_REASON = "google-genai cloud package not installed (pip install google-genai)"
+
 from backend.services.rag.reranker_service import retrieve_and_rerank_scenarios
 from backend.services.rag.context_builder import RAGContextBuilder, build_rag_evidence_package
 
 
+@pytest.mark.skipif(not _google_genai_available, reason=_SKIP_REASON)
 def test_context_builder_missing_values():
     """
     Tests RAG Context Builder for Missing Value Imputation dataset profile.
@@ -65,6 +80,7 @@ def test_context_builder_missing_values():
     assert "SECTION 2: HISTORICAL EVIDENTIAL SCENARIOS" in pkg.prompt_context_str
 
 
+@pytest.mark.skipif(not _google_genai_available, reason=_SKIP_REASON)
 def test_context_builder_categorical_encoding():
     """
     Tests RAG Context Builder for Categorical Encoding dataset profile.
