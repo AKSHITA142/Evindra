@@ -75,7 +75,9 @@ class LLMClient:
         self.gemini_model_name = (
             settings.gemini_model_name or 
             settings.llm_model_name or 
-            "gemini-3.5-flash"
+            os.getenv("GEMINI_MODEL_NAME") or
+            os.getenv("LLM_MODEL_NAME") or
+            "gemini-3.1-flash-lite"
         )
         
         self.openrouter_key = settings.openrouter_api_key

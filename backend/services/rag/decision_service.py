@@ -12,8 +12,16 @@ from backend.services.rag.context_builder import RAGEvidencePackage, build_rag_e
 
 logger = logging.getLogger("datapilot.rag.decision")
 
-PRIMARY_LLM_MODEL = "gemini-2.0-flash"
-LLM_FALLBACK_CHAIN = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
+def _get_default_model_name() -> str:
+    """Dynamically resolves the default Gemini model name from .env settings."""
+    settings = get_settings()
+    return (
+        settings.gemini_model_name
+        or settings.llm_model_name
+        or os.getenv("GEMINI_MODEL_NAME")
+        or os.getenv("LLM_MODEL_NAME")
+        or "gemini-3.1-flash-lite"
+    )
 
 
 class PreprocessingRecommendation(BaseModel):
@@ -49,10 +57,10 @@ class LLMDecisionService:
     Treats existing scenarios and embeddings as READ-ONLY.
     """
 
-    def __init__(self, api_key: Optional[str] = None, model_name: str = "gemini-2.5-flash"):
+    def __init__(self, api_key: Optional[str] = None, model_name: Optional[str] = None):
         settings = get_settings()
         self.api_key = api_key or settings.gemini_api_key or os.getenv("GEMINI_API_KEY")
-        self.model_name = model_name
+        self.model_name = model_name or _get_default_model_name()
 
         if self.api_key and not self.api_key.startswith("your_"):
             self.client = genai.Client(api_key=self.api_key)
@@ -81,8 +89,8 @@ class LLMDecisionService:
             logger.info("Using deterministic fallback engine for preprocessing recommendation...")
             return self._generate_fallback_recommendation(dataset_profile, evidence_package)
 
-        target_model = model_name or self.model_name
-        models_to_try = [target_model] + [m for m in LLM_FALLBACK_CHAIN if m != target_model]
+        target_model = model_name or self.model_name or _get_default_model_name()
+        models_to_try = [target_model]
 
         json_schema_prompt = (
             "{\n"
@@ -202,7 +210,7 @@ def generate_preprocessing_recommendation(
     model_name: Optional[str] = None,
 ) -> PreprocessingRecommendation:
     """Convenience wrapper around LLMDecisionService.generate_preprocessing_recommendation."""
-    service = LLMDecisionService(model_name=model_name or "gemini-2.5-flash")
+    service = LLMDecisionService(model_name=model_name or _get_default_model_name())
     return service.generate_preprocessing_recommendation(
         dataset_profile=dataset_profile,
         evidence_package=evidence_package,

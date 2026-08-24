@@ -40,8 +40,8 @@ class Settings(BaseSettings):
     model_name: Optional[str] = Field(default=None, alias="MODEL_NAME")
     gemini_api_key: Optional[str] = Field(default=None, alias="GEMINI_API_KEY")
     openai_api_key: Optional[str] = Field(default=None, alias="OPENAI_API_KEY")
-    llm_model_name: Optional[str] = Field(default=None, alias="LLM_MODEL_NAME")
-    gemini_model_name: Optional[str] = Field(default=None, alias="GEMINI_MODEL_NAME")
+    llm_model_name: Optional[str] = Field(default="gemini-3.5-flash-lite", alias="LLM_MODEL_NAME")
+    gemini_model_name: Optional[str] = Field(default="gemini-3.5-flash-lite", alias="GEMINI_MODEL_NAME")
 
 
     model_config = SettingsConfigDict(

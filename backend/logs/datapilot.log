@@ -5772,3 +5772,35 @@ backend.core.exceptions.ValidationException: Invalid operation type 'Imputer' in
 2026-08-24 12:32:28,673 - datapilot.main - INFO - Starting DataPilot-AI v0.1.0 (development)
 2026-08-24 12:32:28,673 - datapilot.database - INFO - Database schema initialized successfully.
 2026-08-24 12:32:28,673 - datapilot.main - INFO - Database initialized successfully.
+2026-08-24 12:35:50,022 - datapilot.main - INFO - Shutting down DataPilot-AI
+2026-08-24 12:35:52,038 - datapilot.main - INFO - Starting DataPilot-AI v0.1.0 (development)
+2026-08-24 12:35:52,039 - datapilot.database - INFO - Database schema initialized successfully.
+2026-08-24 12:35:52,039 - datapilot.main - INFO - Database initialized successfully.
+2026-08-24 12:36:02,341 - datapilot.main - INFO - Shutting down DataPilot-AI
+2026-08-24 12:36:03,908 - datapilot.main - INFO - Starting DataPilot-AI v0.1.0 (development)
+2026-08-24 12:36:03,909 - datapilot.database - INFO - Database schema initialized successfully.
+2026-08-24 12:36:03,909 - datapilot.main - INFO - Database initialized successfully.
+2026-08-24 12:36:07,750 - datapilot.main - INFO - Shutting down DataPilot-AI
+2026-08-24 12:36:09,272 - datapilot.main - INFO - Starting DataPilot-AI v0.1.0 (development)
+2026-08-24 12:36:09,273 - datapilot.database - INFO - Database schema initialized successfully.
+2026-08-24 12:36:09,273 - datapilot.main - INFO - Database initialized successfully.
+2026-08-24 12:36:18,260 - datapilot.main - INFO - Shutting down DataPilot-AI
+2026-08-24 12:36:20,019 - datapilot.main - INFO - Starting DataPilot-AI v0.1.0 (development)
+2026-08-24 12:36:20,021 - datapilot.database - INFO - Database schema initialized successfully.
+2026-08-24 12:36:20,021 - datapilot.main - INFO - Database initialized successfully.
+2026-08-24 12:36:29,311 - datapilot.main - INFO - Shutting down DataPilot-AI
+2026-08-24 12:36:31,018 - datapilot.main - INFO - Starting DataPilot-AI v0.1.0 (development)
+2026-08-24 12:36:31,019 - datapilot.database - INFO - Database schema initialized successfully.
+2026-08-24 12:36:31,019 - datapilot.main - INFO - Database initialized successfully.
+2026-08-24 12:36:39,001 - datapilot.main - INFO - Shutting down DataPilot-AI
+2026-08-24 12:36:40,713 - datapilot.main - INFO - Starting DataPilot-AI v0.1.0 (development)
+2026-08-24 12:36:40,714 - datapilot.database - INFO - Database schema initialized successfully.
+2026-08-24 12:36:40,714 - datapilot.main - INFO - Database initialized successfully.
+2026-08-24 12:36:42,231 - datapilot.main - INFO - Shutting down DataPilot-AI
+2026-08-24 12:36:43,763 - datapilot.main - INFO - Starting DataPilot-AI v0.1.0 (development)
+2026-08-24 12:36:43,764 - datapilot.database - INFO - Database schema initialized successfully.
+2026-08-24 12:36:43,764 - datapilot.main - INFO - Database initialized successfully.
+2026-08-24 12:36:47,703 - datapilot.main - INFO - Shutting down DataPilot-AI
+2026-08-24 12:36:49,162 - datapilot.main - INFO - Starting DataPilot-AI v0.1.0 (development)
+2026-08-24 12:36:49,163 - datapilot.database - INFO - Database schema initialized successfully.
+2026-08-24 12:36:49,163 - datapilot.main - INFO - Database initialized successfully.
