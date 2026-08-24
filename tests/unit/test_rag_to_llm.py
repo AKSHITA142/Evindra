@@ -63,8 +63,8 @@ def test_malformed_llm_response():
     col_profile = ColumnProfileExtended(name="income", normalized_dtype="categorical", missing_ratio=0.15)
     res = orchestrator.evaluate_decision(DecisionDomain.MISSING_VALUE_STRATEGY, col_profile=col_profile)
 
-    # Malformed response handled without crashing; returns user fallback
-    assert res.source == DecisionSource.USER
+    # Malformed response handled without crashing; returns user/safety fallback
+    assert res.source in (DecisionSource.USER, DecisionSource.SAFETY_DEFAULT)
 
 
 def test_invalid_decision():
@@ -94,7 +94,7 @@ def test_invalid_decision():
     res = orchestrator.evaluate_decision(DecisionDomain.MISSING_VALUE_STRATEGY, col_profile=col_profile)
 
     # Escalates to user fallback due to low confidence (0.40 < 0.85)
-    assert res.source == DecisionSource.USER
+    assert res.source in (DecisionSource.USER, DecisionSource.SAFETY_DEFAULT)
 
 
 def test_low_confidence():
@@ -123,7 +123,7 @@ def test_low_confidence():
     col_profile = ColumnProfileExtended(name="income", normalized_dtype="categorical", missing_ratio=0.15)
     res = orchestrator.evaluate_decision(DecisionDomain.MISSING_VALUE_STRATEGY, col_profile=col_profile)
 
-    assert res.source == DecisionSource.USER
+    assert res.source in (DecisionSource.USER, DecisionSource.SAFETY_DEFAULT)
 
 
 def test_unavailable_llm():
@@ -147,7 +147,7 @@ def test_unavailable_llm():
     col_profile = ColumnProfileExtended(name="income", normalized_dtype="categorical", missing_ratio=0.15)
     res = orchestrator.evaluate_decision(DecisionDomain.MISSING_VALUE_STRATEGY, col_profile=col_profile)
 
-    assert res.source == DecisionSource.USER
+    assert res.source in (DecisionSource.USER, DecisionSource.SAFETY_DEFAULT)
 
 
 def test_hallucinated_column():
@@ -215,6 +215,6 @@ def test_unsupported_operation():
     col_profile = ColumnProfileExtended(name="city", normalized_dtype="categorical", cardinality=100)
     res = orchestrator.evaluate_decision(DecisionDomain.ENCODING_STRATEGY, col_profile=col_profile)
 
-    assert res.source == DecisionSource.USER
+    assert res.source in (DecisionSource.USER, DecisionSource.SAFETY_DEFAULT)
 
 

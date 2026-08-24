@@ -295,7 +295,7 @@ class RuleEngine:
         if outlier_ratio > 0.10:
             return DecisionResult(
                 domain=DecisionDomain.OUTLIER_HANDLING,
-                decision="WINSORIZE_CLIPPING",
+                decision="CLIP_IQR",
                 confidence=0.85,
                 reasoning=f"Column '{col_name}' has high outlier ratio ({outlier_ratio:.1%}). Clipping extreme values to 1st/99th percentiles bounds leverage.",
                 evidence=[f"outlier_ratio={outlier_ratio:.4f}"],

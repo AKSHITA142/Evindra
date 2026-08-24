@@ -272,7 +272,7 @@ class PlanExecutor:
                         if not X_test.empty and c in X_test.columns:
                             X_test[c] = np.log1p(X_test[c].clip(lower=0))
 
-                elif action_upper == "CLIP_IQR":
+                elif action_upper in ("CLIP_IQR", "WINSORIZE", "WINZORIZE", "WINSORIZE_CLIPPING"):
                     num_cols = [c for c in cols_to_process if pd.api.types.is_numeric_dtype(X_train[c])]
                     for c in num_cols:
                         q1 = X_train[c].quantile(0.25)

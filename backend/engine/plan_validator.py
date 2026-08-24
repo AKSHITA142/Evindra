@@ -24,7 +24,7 @@ class PlanValidator:
         # Scaling actions
         "STANDARD_SCALER", "MINMAX_SCALER", "ROBUST_SCALER", "LOG_TRANSFORM", "POWER_TRANSFORM", "NO_SCALING",
         # Outlier actions
-        "CLIP_IQR", "REMOVE_OUTLIERS", "WINZORIZE", "KEEP_OUTLIERS",
+        "CLIP_IQR", "REMOVE_OUTLIERS", "WINZORIZE", "WINSORIZE", "WINSORIZE_CLIPPING", "KEEP_OUTLIERS",
         # Feature selection & column removal actions
         "DROP_COLUMNS", "DROP_LEAKAGE_COLUMNS", "REMOVE_DUPLICATE_COLUMNS", "REMOVE_HIGH_MISSING", "FEATURE_SELECTION",
         # Ingestion & split actions
@@ -33,7 +33,7 @@ class PlanValidator:
 
     NUMERIC_ONLY_ACTIONS = {
         "STANDARD_SCALER", "MINMAX_SCALER", "ROBUST_SCALER", "LOG_TRANSFORM",
-        "POWER_TRANSFORM", "CLIP_IQR", "WINZORIZE",
+        "POWER_TRANSFORM", "CLIP_IQR", "WINZORIZE", "WINSORIZE", "WINSORIZE_CLIPPING",
     }
 
     CATEGORICAL_ONLY_ACTIONS = {
