@@ -12,8 +12,8 @@ from backend.services.rag.context_builder import RAGEvidencePackage, build_rag_e
 
 logger = logging.getLogger("datapilot.rag.decision")
 
-PRIMARY_LLM_MODEL = "gemini-2.5-flash"
-LLM_FALLBACK_CHAIN = ["gemini-2.5-flash", "gemini-2.5-pro"]
+PRIMARY_LLM_MODEL = "gemini-2.0-flash"
+LLM_FALLBACK_CHAIN = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]
 
 
 class PreprocessingRecommendation(BaseModel):
