@@ -5600,3 +5600,7 @@ backend.core.exceptions.ValidationException: Invalid operation type 'Imputer' in
 2026-08-24 11:35:43,587 - datapilot.main - INFO - Starting DataPilot-AI v0.1.0 (development)
 2026-08-24 11:35:43,588 - datapilot.database - INFO - Database schema initialized successfully.
 2026-08-24 11:35:43,588 - datapilot.main - INFO - Database initialized successfully.
+2026-08-24 11:37:13,856 - datapilot.main - INFO - Shutting down DataPilot-AI
+2026-08-24 11:37:15,644 - datapilot.main - INFO - Starting DataPilot-AI v0.1.0 (development)
+2026-08-24 11:37:15,645 - datapilot.database - INFO - Database schema initialized successfully.
+2026-08-24 11:37:15,645 - datapilot.main - INFO - Database initialized successfully.
