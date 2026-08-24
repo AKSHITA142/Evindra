@@ -53,6 +53,7 @@ class PreprocessingPlanBuilder:
         user_mission: str = "",
         user_selections: Optional[Dict[str, str]] = None,
         auto_approve_default: bool = True,
+        decisions: Optional[List[DecisionResult]] = None,
     ) -> PreprocessingPlan:
         """
         Builds a complete, DAG-ordered PreprocessingPlan from a DatasetProfile.
@@ -68,6 +69,62 @@ class PreprocessingPlanBuilder:
 
         # Input Schema
         input_schema = {c_name: c_prof.normalized_dtype for c_name, c_prof in col_map.items()}
+
+        if decisions:
+            # Use precomputed decisions list directly
+            # Precompute column sets by dtype for proper action-column matching
+            numeric_cols = [c for c in col_map.keys() if c != target_col and getattr(col_map[c], 'normalized_dtype', '') == 'numeric']
+            categorical_cols = [c for c in col_map.keys() if c != target_col and getattr(col_map[c], 'normalized_dtype', '') in ('categorical', 'text')]
+            all_feature_cols = [c for c in col_map.keys() if c != target_col]
+
+            NUMERIC_ACTIONS = {"STANDARD_SCALER", "MINMAX_SCALER", "ROBUST_SCALER", "LOG_TRANSFORM",
+                               "POWER_TRANSFORM", "CLIP_IQR", "WINZORIZE", "IMPUTE_MEAN", "IMPUTE_MEDIAN",
+                               "IMPUTE_KNN", "IMPUTE_ZERO"}
+            CATEGORICAL_ACTIONS = {"ONE_HOT_ENCODING", "TARGET_ENCODING", "TARGET_ENCODING_OUT_OF_FOLD",
+                                   "ORDINAL_ENCODING", "FREQUENCY_ENCODING", "IMPUTE_MODE",
+                                   "IMPUTE_EXPLICIT_CATEGORY"}
+
+            step_num = 1
+            for d in decisions:
+                stage = self.DOMAIN_STAGE_MAP.get(d.domain, "MISSING_VALUE_HANDLING")
+                action_upper = d.decision.upper()
+
+                # Select columns based on action type
+                if action_upper in NUMERIC_ACTIONS:
+                    target_cols_list = numeric_cols[:5] if numeric_cols else all_feature_cols[:5]
+                elif action_upper in CATEGORICAL_ACTIONS:
+                    target_cols_list = categorical_cols[:5] if categorical_cols else all_feature_cols[:5]
+                else:
+                    target_cols_list = all_feature_cols[:5] if all_feature_cols else []
+
+                if not target_cols_list and col_map:
+                    target_cols_list = [list(col_map.keys())[0]]
+
+                step = PreprocessingStep(
+                    step_number=step_num,
+                    stage=stage,
+                    domain=d.domain,
+                    action=d.decision,
+                    columns=target_cols_list,
+                    decision_id=d.decision_id,
+                    decision_source=d.source,
+                    confidence=d.confidence,
+                    reasoning=d.reasoning,
+                )
+                raw_steps.append(step)
+                step_num += 1
+                decision_results.append(d)
+
+            ordered_steps = sorted(raw_steps, key=lambda s: (self.STAGE_ORDER.get(s.stage, 99), s.step_number))
+            for idx, s in enumerate(ordered_steps, 1):
+                s.step_number = idx
+
+            return PreprocessingPlan(
+                dataset_id=getattr(dataset_profile, "dataset_id", "dataset_001"),
+                dataset_name=dataset_profile.dataset_name,
+                target_column=target_col or "target",
+                steps=ordered_steps,
+            )
 
         # Step 1: Data Ingestion Step
         ingest_res = DecisionResult(

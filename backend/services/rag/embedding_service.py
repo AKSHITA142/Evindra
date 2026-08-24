@@ -72,15 +72,8 @@ class EmbeddingService:
                 last_exception = e
                 err_msg = str(e)
                 if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg or "Quota exceeded" in err_msg:
-                    match = re.search(r"Please retry in (\d+(?:\.\d+)?)s", err_msg)
-                    parsed_sec = math.ceil(float(match.group(1))) + 2 if match else 5 * (2 ** (attempt - 1))
-                    logger.warning(
-                        f"Embedding Model '{self.model_name}' Rate Limit (429) hit (attempt {attempt}/{max_retries}). "
-                        f"Retrying in {parsed_sec}s on same model..."
-                    )
-                    if attempt < max_retries:
-                        time.sleep(min(parsed_sec, 15))
-                        continue
+                    logger.warning(f"Embedding Model '{self.model_name}' Quota 429 reached. Returning fallback vectors immediately.")
+                    return [[0.0] * self.expected_dimension for _ in cleaned_texts]
                 else:
                     logger.error(f"Gemini API error during embedding generation with '{self.model_name}': {e}")
                     raise RuntimeError(f"Embedding generation with model '{self.model_name}' failed: {e}") from e

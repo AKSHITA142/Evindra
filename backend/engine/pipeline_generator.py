@@ -49,10 +49,10 @@ class PipelineGenerator:
         ds_name = dataset_profile.dataset_name
         target_col = dataset_profile.target_column
 
-        num_cols = dataset_profile.numeric_columns or []
-        cat_cols = dataset_profile.categorical_columns or []
-        dt_cols = dataset_profile.datetime_columns or []
-        text_cols = dataset_profile.text_columns or []
+        num_cols = [c for c in (dataset_profile.numeric_columns or []) if c != target_col]
+        cat_cols = [c for c in (dataset_profile.categorical_columns or []) if c != target_col]
+        dt_cols = [c for c in (dataset_profile.datetime_columns or []) if c != target_col]
+        text_cols = [c for c in (dataset_profile.text_columns or []) if c != target_col]
 
         rows = dataset_profile.rows
         has_categoricals = len(cat_cols) > 0

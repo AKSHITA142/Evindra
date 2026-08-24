@@ -305,7 +305,7 @@ class RuleEngine:
 
         return DecisionResult(
             domain=DecisionDomain.OUTLIER_HANDLING,
-            decision="ROBUST_SCALING_ONLY",
+            decision="ROBUST_SCALER",
             confidence=0.90,
             reasoning=f"Column '{col_name}' has moderate outlier ratio ({outlier_ratio:.1%}). Using robust scaling without row deletion.",
             evidence=[f"outlier_ratio={outlier_ratio:.4f}"],

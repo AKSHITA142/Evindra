@@ -18,7 +18,7 @@ class PlanValidator:
     SUPPORTED_ACTIONS = {
         # Missing value actions
         "IMPUTE_MEAN", "IMPUTE_MEDIAN", "IMPUTE_MODE", "IMPUTE_KNN",
-        "IMPUTE_ZERO", "IMPUTE_EXPLICIT_CATEGORY", "PASS_THROUGH", "NONE", "NO_ACTION",
+        "IMPUTE_ZERO", "IMPUTE_EXPLICIT_CATEGORY", "PASS_THROUGH", "NONE", "NO_ACTION", "NO_OP",
         # Encoding actions
         "ONE_HOT_ENCODING", "TARGET_ENCODING", "TARGET_ENCODING_OUT_OF_FOLD", "ORDINAL_ENCODING", "FREQUENCY_ENCODING", "CLASSIFY_IDENTIFIER_AND_DROP",
         # Scaling actions
@@ -28,7 +28,7 @@ class PlanValidator:
         # Feature selection & column removal actions
         "DROP_COLUMNS", "DROP_LEAKAGE_COLUMNS", "REMOVE_DUPLICATE_COLUMNS", "REMOVE_HIGH_MISSING", "FEATURE_SELECTION",
         # Ingestion & split actions
-        "VERIFY_DATASET_SCHEMA", "STRATIFIED_TRAIN_TEST_SPLIT", "TIME_SERIES_SPLIT", "GROUP_KFOLD_SPLIT",
+        "VERIFY_DATASET_SCHEMA", "STRATIFIED_TRAIN_TEST_SPLIT", "TIME_SERIES_SPLIT", "GROUP_KFOLD_SPLIT", "SEPARATE_TARGET",
     }
 
     NUMERIC_ONLY_ACTIONS = {
@@ -45,6 +45,7 @@ class PlanValidator:
         self,
         plan: PreprocessingPlan,
         dataset_profile: Optional[DatasetProfile] = None,
+        df: Optional[Any] = None,
     ) -> PlanValidationResult:
         """
         Deterministically validates a PreprocessingPlan against 16 safety gate rules.
@@ -87,8 +88,8 @@ class PlanValidator:
             step_cols = step.columns or []
             stage_upper = step.stage.upper()
 
-            # Rule 0: Action Validity Check
-            if action_upper not in self.SUPPORTED_ACTIONS:
+            action_base = action_upper.split(":")[0]
+            if action_upper not in self.SUPPORTED_ACTIONS and action_base not in self.SUPPORTED_ACTIONS:
                 errors.append(f"Validation Error: Unsupported or invalid action '{step.action}' in step #{step.step_number}.")
 
             # Rule 3: Referenced Columns Exist Check

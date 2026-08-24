@@ -321,3 +321,72 @@ class DecisionOrchestrator:
             logger.warning(f"LLM decision service encountered error: {e}. Gracefully falling back.")
             return None
 
+    def orchestrate_decisions(
+        self,
+        dataset_profile: DatasetProfile,
+        user_responses: Optional[Dict[str, Any]] = None,
+    ) -> List[DecisionResult]:
+        """
+        Runs complete decision hierarchy across all decision domains for a DatasetProfile.
+        """
+        user_resp_map = user_responses or {}
+        decisions: List[DecisionResult] = []
+
+        all_cols = getattr(dataset_profile, "detailed_column_profiles", []) or getattr(dataset_profile, "column_profiles", [])
+        cat_cols = [c for c in all_cols if getattr(c, "normalized_dtype", None) in ("categorical", "string", "category")]
+        num_cols = [c for c in all_cols if getattr(c, "normalized_dtype", None) in ("numeric", "integer", "float")]
+
+        # 1. Missing Value Strategy per column
+        for col_prof in all_cols:
+            if col_prof.name == dataset_profile.target_column:
+                continue
+            user_sel = user_resp_map.get(col_prof.name) or user_resp_map.get("missing_value_strategy")
+            res = self.evaluate_decision(
+                domain=DecisionDomain.MISSING_VALUE_STRATEGY,
+                col_profile=col_prof,
+                dataset_profile=dataset_profile,
+                user_selection=user_sel,
+            )
+            decisions.append(res)
+
+        # 2. Categorical Encoding Strategy
+        for col_prof in cat_cols:
+            if col_prof.name == dataset_profile.target_column:
+                continue
+            user_sel = user_resp_map.get(col_prof.name) or user_resp_map.get("encoding_strategy")
+            res = self.evaluate_decision(
+                domain=DecisionDomain.ENCODING_STRATEGY,
+                col_profile=col_prof,
+                dataset_profile=dataset_profile,
+                user_selection=user_sel,
+            )
+            decisions.append(res)
+
+        # 3. Scaling Transformation
+        for col_prof in num_cols:
+            if col_prof.name == dataset_profile.target_column:
+                continue
+            user_sel = user_resp_map.get(col_prof.name) or user_resp_map.get("scaling_transformation")
+            res = self.evaluate_decision(
+                domain=DecisionDomain.SCALING_TRANSFORMATION,
+                col_profile=col_prof,
+                dataset_profile=dataset_profile,
+                user_selection=user_sel,
+            )
+            decisions.append(res)
+
+        # 4. Outlier Strategy
+        for col_prof in num_cols:
+            if col_prof.name == dataset_profile.target_column:
+                continue
+            user_sel = user_resp_map.get(col_prof.name) or user_resp_map.get("outlier_handling")
+            res = self.evaluate_decision(
+                domain=DecisionDomain.OUTLIER_HANDLING,
+                col_profile=col_prof,
+                dataset_profile=dataset_profile,
+                user_selection=user_sel,
+            )
+            decisions.append(res)
+
+        return decisions
+

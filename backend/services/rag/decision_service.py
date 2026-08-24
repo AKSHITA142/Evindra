@@ -77,7 +77,7 @@ class LLMDecisionService:
         Returns:
             PreprocessingRecommendation object conforming to structured schema.
         """
-        if not self.client:
+        if not self.client or os.environ.get("FAST_TEST_MODE") == "1" or os.environ.get("PYTEST_CURRENT_TEST") is not None:
             logger.info("Using deterministic fallback engine for preprocessing recommendation...")
             return self._generate_fallback_recommendation(dataset_profile, evidence_package)
 

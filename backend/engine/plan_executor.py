@@ -210,6 +210,15 @@ class PlanExecutor:
                             X_test[cat_cols] = ord_enc.transform(X_test[cat_cols].astype(str))
                         fitted_transformers["ordinal_encoder"] = ord_enc
 
+                elif action_upper == "FREQUENCY_ENCODING":
+                    cat_cols = [c for c in cols_to_process if c in X_train.columns and str(X_train[c].dtype) in ("object", "category", "string")]
+                    for c in cat_cols:
+                        freq_map = X_train[c].value_counts(normalize=True).to_dict()
+                        X_train[c] = X_train[c].map(freq_map).fillna(0.0)
+                        if not X_test.empty and c in X_test.columns:
+                            X_test[c] = X_test[c].map(freq_map).fillna(0.0)
+                        fitted_transformers[f"{c}:frequency_encoder"] = freq_map
+
                 elif "TARGET_ENCODING" in action_upper:
                     cat_cols = [c for c in cols_to_process if c in X_train.columns]
                     if cat_cols and y_train is not None:
@@ -220,6 +229,13 @@ class PlanExecutor:
                             if not X_test.empty and c in X_test.columns:
                                 X_test[c] = X_test[c].map(means).fillna(global_mean)
                             fitted_transformers[f"{c}:target_encoder"] = {"means": means, "global_mean": global_mean}
+
+                elif action_upper == "IMPUTE_EXPLICIT_CATEGORY":
+                    for c in cols_to_process:
+                        fill_val = step.params.get("fill_value", "MISSING")
+                        X_train[c] = X_train[c].fillna(fill_val)
+                        if not X_test.empty and c in X_test.columns:
+                            X_test[c] = X_test[c].fillna(fill_val)
 
                 # --- 3. SCALING & TRANSFORMATION ---
                 elif action_upper == "STANDARD_SCALER":
