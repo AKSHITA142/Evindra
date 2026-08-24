@@ -68,8 +68,125 @@ def test_unified_dataset_profile_generation():
     assert "duplicate_col_2" in dup_1.duplicate_column_relationship
     assert "duplicate_feature" in dup_1.semantic_role_hints
 
-    # Verify JSON serializability
+    # Verify JSON serializability and new Phase 2 canonical fields
     json_dict = profile.to_dict()
     assert isinstance(json_dict, dict)
     assert json_dict["rows"] == 100
     assert json_dict["columns"] == 9
+    assert profile.row_count == 100
+    assert profile.column_count == 9
+    assert len(profile.numeric_columns) > 0
+    assert profile.dataset_fingerprint is not None
+
+
+def test_numeric_dataset():
+    """Verify DatasetProfiler on purely numeric datasets."""
+    df = pd.DataFrame({
+        "feat_a": [1.0, 2.0, 3.0, 4.0, 5.0],
+        "feat_b": [10.0, 20.0, 30.0, 40.0, 50.0],
+        "target": [0.5, 1.5, 2.5, 3.5, 4.5],
+    })
+    prof = DatasetProfiler.profile_dataframe(df, target_column="target")
+    assert prof.numeric_count == 3
+    assert "feat_a" in prof.numeric_columns
+    assert "regression" in prof.problem_type_candidates
+    assert prof.detailed_column_profiles[0].median is not None
+    assert prof.detailed_column_profiles[0].iqr is not None
+
+
+def test_categorical_dataset():
+    """Verify DatasetProfiler on purely categorical datasets."""
+    df = pd.DataFrame({
+        "color": ["red", "blue", "green", "red", "blue"],
+        "size": ["S", "M", "L", "XL", "S"],
+        "target": ["yes", "no", "yes", "no", "yes"],
+    })
+    prof = DatasetProfiler.profile_dataframe(df, target_column="target")
+    assert prof.categorical_count == 3
+    assert "color" in prof.categorical_columns
+    assert "binary_classification" in prof.problem_type_candidates or "classification" in prof.problem_type_candidates
+
+
+def test_mixed_dataset():
+    """Verify DatasetProfiler on mixed datasets."""
+    df = pd.DataFrame({
+        "age": [25, 30, 35, 40],
+        "city": ["NYC", "LA", "NYC", "LA"],
+        "target": [0, 1, 0, 1],
+    })
+    prof = DatasetProfiler.profile_dataframe(df, target_column="target")
+    assert "age" in prof.numeric_columns
+    assert "city" in prof.categorical_columns
+    assert prof.class_distribution is not None
+
+
+def test_missing_values():
+    """Verify handling of heavy missing values."""
+    df = pd.DataFrame({
+        "full_null": [None, None, None, None],
+        "partial_null": [1.0, None, 3.0, None],
+    })
+    prof = DatasetProfiler.profile_dataframe(df)
+    assert prof.dataset_wide_missingness == 0.75
+    assert prof.global_missingness == 0.75
+    col_map = {c.name: c for c in prof.detailed_column_profiles}
+    assert col_map["full_null"].missing_ratio == 1.0
+
+
+def test_duplicate_columns():
+    """Verify detection of duplicate columns."""
+    df = pd.DataFrame({
+        "col_a": [1, 2, 3, 4],
+        "col_b": [1, 2, 3, 4],
+    })
+    prof = DatasetProfiler.profile_dataframe(df)
+    col_map = {c.name: c for c in prof.detailed_column_profiles}
+    assert "col_b" in col_map["col_a"].duplicate_column_relationship
+    assert "duplicate_feature" in col_map["col_a"].semantic_role_hints
+
+
+def test_constant_columns():
+    """Verify detection of constant and near-constant columns."""
+    df = pd.DataFrame({
+        "const": [42] * 20,
+        "near_const": [1] * 19 + [2],
+    })
+    prof = DatasetProfiler.profile_dataframe(df)
+    col_map = {c.name: c for c in prof.detailed_column_profiles}
+    assert col_map["const"].constant_status is True
+    assert col_map["near_const"].near_constant_status is True
+
+
+def test_datetime_and_text():
+    """Verify handling of datetime and text columns."""
+    df = pd.DataFrame({
+        "date_col": pd.date_range("2025-01-01", periods=5),
+        "text_col": ["Sentence one here", "Another sentence text", "Third text entry", "Fourth long string sentence", "Fifth description text"],
+    })
+    prof = DatasetProfiler.profile_dataframe(df)
+    assert prof.datetime_count == 1
+    assert "date_col" in prof.datetime_columns
+    assert prof.text_count == 1
+    assert "text_col" in prof.text_columns
+
+
+def test_small_dataset():
+    """Verify handling of small (1-2 row) datasets."""
+    df = pd.DataFrame({
+        "x": [10.0],
+        "y": ["A"],
+    })
+    prof = DatasetProfiler.profile_dataframe(df)
+    assert prof.rows == 1
+    assert prof.columns == 2
+    assert prof.dataset_fingerprint is not None
+
+
+def test_malformed_edge_case_dataset():
+    """Verify handling of empty DataFrame or NaN-only edge case dataset."""
+    df = pd.DataFrame(columns=["a", "b"])
+    prof = DatasetProfiler.profile_dataframe(df)
+    assert prof.rows == 0
+    assert prof.columns == 2
+    assert isinstance(prof.to_dict(), dict)
+

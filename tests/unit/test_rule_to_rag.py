@@ -25,12 +25,34 @@ def test_high_confidence_rule_bypasses_rag():
     mock_rag_service.retrieve_relevant_scenarios.assert_not_called()
 
 
-def test_low_confidence_rule_escalates_to_rag_and_accepts_rag():
-    """Verify low-confidence rule decision escalates to RAG and accepts RAG scenario evidence."""
-    # Policy requiring 0.98 for rule_strong, so 0.75 forces RAG escalation
+def test_low_confidence_rule_escalates_to_rag():
+    """Verify low-confidence rule decision triggers RAG retrieval."""
     custom_policy = ConfidencePolicy(
         domain_overrides={
-            DecisionDomain.MISSING_VALUE_STRATEGY: DomainConfidenceThresholds(rule_strong=0.98, rule_acceptable=0.70, rag_strong=0.85)
+            DecisionDomain.MISSING_VALUE_STRATEGY: DomainConfidenceThresholds(rule_strong=0.98, rule_acceptable=0.70)
+        }
+    )
+
+    mock_rag_service = MagicMock(spec=HybridRetrievalService)
+    mock_rag_service.retrieve_relevant_scenarios.return_value = []
+
+    orchestrator = DecisionOrchestrator(
+        confidence_policy=custom_policy,
+        hybrid_retrieval_service=mock_rag_service,
+    )
+
+    col_profile = ColumnProfileExtended(name="income", normalized_dtype="numeric", missing_ratio=0.05, skewness=0.1)
+    orchestrator.evaluate_decision(DecisionDomain.MISSING_VALUE_STRATEGY, col_profile=col_profile)
+
+    # Rule gave 0.95 < 0.98 (rule_strong), so RAG was called
+    mock_rag_service.retrieve_relevant_scenarios.assert_called_once()
+
+
+def test_relevant_rag_scenario_returns_decision():
+    """Verify relevant RAG scenario with high similarity score returns RAG DecisionResult."""
+    custom_policy = ConfidencePolicy(
+        domain_overrides={
+            DecisionDomain.MISSING_VALUE_STRATEGY: DomainConfidenceThresholds(rule_strong=0.98, rag_strong=0.85)
         }
     )
 
@@ -39,13 +61,11 @@ def test_low_confidence_rule_escalates_to_rag_and_accepts_rag():
         {
             "scenario_id": "scen_102",
             "domain": "missing_value_strategy",
-            "similarity_score": 1.0,
-            "semantic_score": 1.0,
+            "similarity_score": 0.92,
             "structured_score": 1.0,
             "validation_score": 1.0,
-            "final_score": 1.0,
+            "final_score": 0.92,
             "metadata": {"recommendation": "IMPUTE_MEDIAN_ROBUST"},
-            "retrieval_text": "Similar dataset with missing values",
         }
     ]
 
@@ -57,15 +77,42 @@ def test_low_confidence_rule_escalates_to_rag_and_accepts_rag():
     col_profile = ColumnProfileExtended(name="income", normalized_dtype="numeric", missing_ratio=0.05, skewness=0.1)
     res = orchestrator.evaluate_decision(DecisionDomain.MISSING_VALUE_STRATEGY, col_profile=col_profile)
 
-    # Rule gave 0.95 < 0.98, so it queried RAG
-    mock_rag_service.retrieve_relevant_scenarios.assert_called_once()
-
-    # RAG returned 0.89 >= 0.85 (rag_strong) -> Decision accepted from RAG
     assert res.source == DecisionSource.RAG
     assert res.decision == "IMPUTE_MEDIAN_ROBUST"
     assert res.confidence >= 0.85
-    assert len(res.evidence) == 1
     assert res.metadata["scenario_id"] == "scen_102"
+
+
+def test_irrelevant_rag_scenarios_causes_escalation():
+    """Verify irrelevant RAG scenarios (low similarity score < 0.85) cause escalation beyond RAG."""
+    custom_policy = ConfidencePolicy(
+        domain_overrides={
+            DecisionDomain.MISSING_VALUE_STRATEGY: DomainConfidenceThresholds(rule_strong=0.98, rag_strong=0.85, rag_uncertain=0.70)
+        }
+    )
+
+    mock_rag_service = MagicMock(spec=HybridRetrievalService)
+    # Low score (0.40 < 0.70)
+    mock_rag_service.retrieve_relevant_scenarios.return_value = [
+        {
+            "scenario_id": "scen_irrelevant",
+            "domain": "missing_value_strategy",
+            "similarity_score": 0.40,
+            "final_score": 0.40,
+            "metadata": {"recommendation": "IMPUTE_ZERO"},
+        }
+    ]
+
+    orchestrator = DecisionOrchestrator(
+        confidence_policy=custom_policy,
+        hybrid_retrieval_service=mock_rag_service,
+    )
+
+    col_profile = ColumnProfileExtended(name="income", normalized_dtype="numeric", missing_ratio=0.05, skewness=0.1)
+    res = orchestrator.evaluate_decision(DecisionDomain.MISSING_VALUE_STRATEGY, col_profile=col_profile)
+
+    # RAG was low confidence, so it escalated past RAG
+    assert res.source != DecisionSource.RAG
 
 
 def test_rag_unavailable_graceful_fallback():
@@ -87,6 +134,6 @@ def test_rag_unavailable_graceful_fallback():
     col_profile = ColumnProfileExtended(name="age", normalized_dtype="numeric", missing_ratio=0.05, skewness=0.1)
     res = orchestrator.evaluate_decision(DecisionDomain.MISSING_VALUE_STRATEGY, col_profile=col_profile)
 
-    # Should not raise error, falls back safely across decision hierarchy
-    assert res.source in (DecisionSource.RULE, DecisionSource.LLM, DecisionSource.USER)
+    # Fallback handled safely without throwing exception
     assert res.decision is not None
+

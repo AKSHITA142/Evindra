@@ -68,11 +68,17 @@ class UserFallbackHandler:
 
         if user_response is not None:
             logger.info(f"User explicit response received for domain '{domain_str}': '{user_response.selected_decision}'")
+            # Handle explicit user rejection
+            decision_str = user_response.selected_decision
+            if getattr(user_response, 'rejected', False):
+                decision_str = user_response.alternative_decision or request.default_option
+                logger.info(f"User rejected recommendation. Using alternative decision '{decision_str}'.")
+
             return DecisionResult(
                 domain=decision_result.domain,
-                decision=user_response.selected_decision,
+                decision=decision_str,
                 confidence=1.0,
-                reasoning=f"Explicit user selection '{user_response.selected_decision}' (overridden={user_response.overridden}). Notes: {user_response.user_notes or 'None'}",
+                reasoning=f"Explicit user decision '{decision_str}' (overridden={user_response.overridden}, rejected={getattr(user_response, 'rejected', False)}). Notes: {user_response.user_notes or 'None'}",
                 evidence=decision_result.evidence,
                 alternatives=decision_result.alternatives,
                 source=DecisionSource.USER,
@@ -81,11 +87,28 @@ class UserFallbackHandler:
                 metadata={
                     "fallback_request_id": request.request_id,
                     "user_overridden": user_response.overridden,
+                    "user_rejected": getattr(user_response, 'rejected', False),
                     "prior_result": decision_result.to_dict(),
+                    "audit_record": {
+                        "event": "USER_DECISION_CAPTURED",
+                        "request_id": request.request_id,
+                        "selected_decision": decision_str,
+                        "prior_source": decision_result.source.value if hasattr(decision_result.source, 'value') else str(decision_result.source),
+                    },
                 },
             )
 
         if user_selection is not None:
+            # Handle invalid choice validation
+            valid_options = [request.recommended_decision, request.default_option] + [
+                a.get("strategy") or a.get("decision") for a in request.alternatives if isinstance(a, dict)
+            ]
+            valid_options = [o for o in valid_options if o]
+            warnings_list = list(decision_result.warnings)
+            
+            if valid_options and user_selection not in valid_options:
+                warnings_list.append(f"User selection '{user_selection}' was not among initial recommendations ({valid_options}). Custom choice recorded.")
+
             logger.info(f"User manual selection string received for domain '{domain_str}': '{user_selection}'")
             return DecisionResult(
                 domain=decision_result.domain,
@@ -96,30 +119,40 @@ class UserFallbackHandler:
                 alternatives=decision_result.alternatives,
                 source=DecisionSource.USER,
                 requires_validation=True,
-                warnings=decision_result.warnings,
+                warnings=warnings_list,
                 metadata={
                     "fallback_request_id": request.request_id,
                     "user_overridden": user_selection != decision_result.decision,
                     "prior_result": decision_result.to_dict(),
+                    "audit_record": {
+                        "event": "USER_SELECTION_CAPTURED",
+                        "request_id": request.request_id,
+                        "selected_decision": user_selection,
+                    },
                 },
             )
 
         if auto_approve_default:
-            logger.info(f"Auto-approving default user fallback option '{request.default_option}' for domain '{domain_str}'.")
+            logger.info(f"Auto-approving safety default option '{request.default_option}' for domain '{domain_str}'.")
             return DecisionResult(
                 domain=decision_result.domain,
                 decision=request.default_option,
                 confidence=decision_result.confidence,
-                reasoning=f"System auto-approved fallback option '{request.default_option}' as user interaction was non-blocking. Preceding reasoning: {decision_result.reasoning}",
+                reasoning=f"System applied safety default '{request.default_option}' as automated confidence was insufficient and non-blocking mode was active. Preceding reasoning: {decision_result.reasoning}",
                 evidence=decision_result.evidence,
                 alternatives=decision_result.alternatives,
-                source=DecisionSource.USER,
+                source=DecisionSource.SAFETY_DEFAULT,
                 requires_validation=True,
-                warnings=decision_result.warnings + ["Decision auto-approved via User Fallback default."],
+                warnings=decision_result.warnings + ["Decision auto-approved via safety_default."],
                 metadata={
                     "fallback_request_id": request.request_id,
                     "auto_approved": True,
                     "prior_result": decision_result.to_dict(),
+                    "audit_record": {
+                        "event": "SAFETY_DEFAULT_APPLIED",
+                        "request_id": request.request_id,
+                        "default_decision": request.default_option,
+                    },
                 },
             )
 
@@ -138,5 +171,9 @@ class UserFallbackHandler:
                 "fallback_request_id": request.request_id,
                 "awaiting_user_input": True,
                 "fallback_request": request.model_dump(mode="json"),
+                "audit_record": {
+                    "event": "AWAITING_USER_INPUT",
+                    "request_id": request.request_id,
+                },
             },
         )

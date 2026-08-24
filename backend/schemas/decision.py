@@ -23,6 +23,7 @@ class DecisionSource(str, Enum):
     RAG = "rag"
     LLM = "llm"
     USER = "user"
+    SAFETY_DEFAULT = "safety_default"
 
 
 class ValidationStatus(str, Enum):
@@ -62,6 +63,38 @@ class DecisionResult(BaseSchema):
     warnings: List[str] = Field(default_factory=list)
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
+    from pydantic import field_validator
+
+    @field_validator("domain", mode="before")
+    @classmethod
+    def validate_domain(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            v_lower = v.lower().strip()
+            for member in DecisionDomain:
+                if member.value.lower() == v_lower or member.name.lower() == v_lower:
+                    return member
+        return v
+
+    @field_validator("source", mode="before")
+    @classmethod
+    def validate_source(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            v_lower = v.lower().strip()
+            for member in DecisionSource:
+                if member.value.lower() == v_lower or member.name.lower() == v_lower:
+                    return member
+        return v
+
+    @field_validator("validation_status", mode="before")
+    @classmethod
+    def validate_validation_status(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            v_lower = v.lower().strip()
+            for member in ValidationStatus:
+                if member.value.lower() == v_lower or member.name.lower() == v_lower:
+                    return member
+        return v
+
     def to_dict(self) -> Dict[str, Any]:
         """Returns deterministic JSON-serializable dictionary representation."""
         return self.model_dump(mode="json")
@@ -90,3 +123,5 @@ class UserFallbackResponse(BaseSchema):
     selected_decision: str
     user_notes: Optional[str] = None
     overridden: bool = False
+    rejected: bool = False
+    alternative_decision: Optional[str] = None

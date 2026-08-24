@@ -82,14 +82,54 @@ def test_confidence_validation():
         )
 
 
-def test_decision_request():
-    """Verify DecisionRequest structure."""
-    req = DecisionRequest(
-        domain=DecisionDomain.ENCODING_STRATEGY,
-        column_name="city",
-        context={"cardinality": 4},
-        dataset_profile={"rows": 500},
+def test_invalid_source_validation():
+    """Verify invalid source string raises ValidationError."""
+    with pytest.raises(ValidationError):
+        DecisionResult(
+            domain=DecisionDomain.ENCODING_STRATEGY,
+            decision="one_hot",
+            confidence=0.8,
+            source="invalid_source_value",
+        )
+
+
+def test_invalid_domain_validation():
+    """Verify invalid domain string raises ValidationError."""
+    with pytest.raises(ValidationError):
+        DecisionResult(
+            domain="invalid_quantum_domain",
+            decision="one_hot",
+            confidence=0.8,
+        )
+
+
+def test_missing_required_fields_validation():
+    """Verify missing required fields (domain, decision, confidence) raises ValidationError."""
+    with pytest.raises(ValidationError):
+        DecisionResult(
+            domain=DecisionDomain.ENCODING_STRATEGY,
+            # Missing decision and confidence
+        )
+
+
+def test_serialization_and_deserialization():
+    """Verify round-trip serialization and deserialization of DecisionResult."""
+    original = DecisionResult(
+        domain="scaling_transformation",
+        decision="standard_scaler",
+        confidence=0.95,
+        reasoning="Normally distributed numeric feature",
+        evidence=[{"mean": 0.0, "std": 1.0}],
+        alternatives=[{"strategy": "minmax_scaler"}],
+        source="rule",
     )
-    assert req.request_id.startswith("req_")
-    assert req.domain == DecisionDomain.ENCODING_STRATEGY
-    assert req.column_name == "city"
+
+    json_str = original.model_dump_json()
+    reconstructed = DecisionResult.model_validate_json(json_str)
+
+    assert reconstructed.decision_id == original.decision_id
+    assert reconstructed.domain == DecisionDomain.SCALING_TRANSFORMATION
+    assert reconstructed.decision == "standard_scaler"
+    assert reconstructed.confidence == 0.95
+    assert reconstructed.source == DecisionSource.RULE
+

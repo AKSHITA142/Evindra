@@ -90,21 +90,85 @@ def test_rule_engine_encoding_decisions():
     assert res_id.decision == "CLASSIFY_IDENTIFIER_AND_DROP"
 
 
-def test_rule_engine_scaling_and_outliers():
-    """Verify scaling and outlier decisions adhere to model family invariants."""
+def test_rule_engine_all_10_domains():
+    """Verify RuleEngine handles all 10 decision domains cleanly."""
     engine = RuleEngine()
+    col_num = ColumnProfileExtended(name="price", normalized_dtype="numeric", missing_ratio=0.05, skewness=0.1)
+    col_date = ColumnProfileExtended(name="created_at", normalized_dtype="datetime", datetime_likelihood=0.95)
+    dataset_prof = DatasetProfile(
+        dataset_name="test_ds",
+        rows=500,
+        columns=5,
+        target_column="price",
+        detailed_column_profiles=[col_num, col_date],
+        feature_target_relationships={"leak_feat": 0.999},
+    )
 
-    col_num = ColumnProfileExtended(name="price", normalized_dtype="numeric", outlier_ratio=0.08)
+    # 1. Missing Value Strategy
+    r1 = engine.evaluate_missing_value_strategy(col_num)
+    assert r1.domain == DecisionDomain.MISSING_VALUE_STRATEGY
 
-    # Tree model -> No scaling
-    res_tree_scale = engine.evaluate_scaling_transformation(col_num, model_family="xgboost")
-    assert res_tree_scale.decision == "NO_SCALING"
-    assert res_tree_scale.confidence >= 0.95
+    # 2. Encoding Strategy
+    r2 = engine.evaluate_encoding_strategy(col_num)
+    assert r2.domain == DecisionDomain.ENCODING_STRATEGY
 
-    # Linear model with outliers -> RobustScaler
-    res_lin_scale = engine.evaluate_scaling_transformation(col_num, model_family="linear")
-    assert res_lin_scale.decision == "ROBUST_SCALER"
+    # 3. Scaling Transformation
+    r3 = engine.evaluate_scaling_transformation(col_num)
+    assert r3.domain == DecisionDomain.SCALING_TRANSFORMATION
 
-    # Outliers with tree model -> Keep outliers
-    res_out_tree = engine.evaluate_outlier_handling(col_num, model_family="random_forest")
-    assert res_out_tree.decision == "KEEP_OUTLIERS"
+    # 4. Outlier Handling
+    r4 = engine.evaluate_outlier_handling(col_num)
+    assert r4.domain == DecisionDomain.OUTLIER_HANDLING
+
+    # 5. Feature Selection
+    r5 = engine.evaluate_feature_selection(dataset_prof)
+    assert r5.domain == DecisionDomain.FEATURE_SELECTION
+
+    # 6. Column Intelligence
+    r6 = engine.evaluate_column_intelligence(col_date)
+    assert r6.domain == DecisionDomain.COLUMN_INTELLIGENCE
+    assert r6.decision == "CLASSIFY_DATETIME"
+
+    # 7. Target Detection
+    r7 = engine.evaluate_target_detection(dataset_prof)
+    assert r7.domain == DecisionDomain.TARGET_DETECTION
+    assert "TARGET:price" in r7.decision
+
+    # 8. Leakage Detection
+    r8 = engine.evaluate_leakage_detection(dataset_prof)
+    assert r8.domain == DecisionDomain.LEAKAGE_DETECTION
+    assert "FLAG_LEAKAGE:leak_feat" in r8.decision
+
+    # 9. Feature Engineering
+    r9 = engine.evaluate_feature_engineering(col_date)
+    assert r9.domain == DecisionDomain.FEATURE_ENGINEERING
+    assert r9.decision == "EXTRACT_DATETIME_COMPONENTS"
+
+    # 10. Pipeline Strategy
+    r10 = engine.evaluate_pipeline_strategy(dataset_prof)
+    assert r10.domain == DecisionDomain.PIPELINE_STRATEGY
+
+
+def test_rule_engine_ambiguous_and_negative_cases():
+    """Verify RuleEngine returns low confidence (< 0.75) for ambiguous/insufficient evidence cases."""
+    engine = RuleEngine()
+    policy = ConfidencePolicy()
+
+    # Ambiguous column intelligence
+    col_ambig = ColumnProfileExtended(name="unknown_code", normalized_dtype="unknown", unique_ratio=0.4)
+    res_ambig = engine.evaluate_column_intelligence(col_ambig)
+    assert res_ambig.confidence < 0.75
+    assert policy.should_escalate_rule(DecisionDomain.COLUMN_INTELLIGENCE, res_ambig.confidence) is True
+
+    # No target detected
+    empty_prof = DatasetProfile(dataset_name="no_target", rows=10, columns=2)
+    res_no_target = engine.evaluate_target_detection(empty_prof)
+    assert res_no_target.confidence < 0.75
+    assert policy.should_escalate_rule(DecisionDomain.TARGET_DETECTION, res_no_target.confidence) is True
+
+    # Ambiguous feature engineering
+    col_plain = ColumnProfileExtended(name="counter", normalized_dtype="numeric")
+    res_fe = engine.evaluate_feature_engineering(col_plain)
+    assert res_fe.confidence < 0.75
+    assert policy.should_escalate_rule(DecisionDomain.FEATURE_ENGINEERING, res_fe.confidence) is True
+

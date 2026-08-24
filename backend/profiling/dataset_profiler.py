@@ -75,6 +75,11 @@ class DatasetProfiler:
         datetime_count = 0
         text_count = 0
 
+        numeric_columns_list: List[str] = []
+        categorical_columns_list: List[str] = []
+        datetime_columns_list: List[str] = []
+        text_columns_list: List[str] = []
+
         ORDINAL_KEYWORDS = {
             "low", "medium", "high", "small", "large", "poor", "good",
             "excellent", "grade", "stage", "level", "1st", "2nd", "3rd", "p1", "p2", "p3"
@@ -96,22 +101,32 @@ class DatasetProfiler:
             if col_enum_type == ColumnType.NUMERIC or pd.api.types.is_numeric_dtype(series):
                 normalized_dtype = "numeric"
                 numeric_count += 1
+                numeric_columns_list.append(col)
             elif col_enum_type == ColumnType.DATETIME or pd.api.types.is_datetime64_any_dtype(series):
                 normalized_dtype = "datetime"
                 datetime_count += 1
+                datetime_columns_list.append(col)
             elif col_enum_type == ColumnType.BOOLEAN or unique_count <= 2:
                 normalized_dtype = "binary"
                 categorical_count += 1
+                categorical_columns_list.append(col)
             elif col_enum_type == ColumnType.TEXT:
                 normalized_dtype = "text"
                 text_count += 1
+                text_columns_list.append(col)
             else:
                 normalized_dtype = "categorical"
                 categorical_count += 1
+                categorical_columns_list.append(col)
 
             # Compute numeric statistics & outliers
             numeric_stats = None
             outlier_ratio = 0.0
+            val_median = None
+            val_quantiles = None
+            val_iqr = None
+            val_kurtosis = None
+
             if normalized_dtype == "numeric" and len(clean_s) > 0:
                 try:
                     s_float = clean_s.astype(float)
@@ -122,16 +137,21 @@ class DatasetProfiler:
                     skewness = float(s_float.skew()) if len(s_float) > 2 else 0.0
                     kurtosis = float(s_float.kurtosis()) if len(s_float) > 3 else 0.0
 
+                    val_median = round(q50, 4)
+                    val_quantiles = {"q25": round(q25, 4), "q50": round(q50, 4), "q75": round(q75, 4)}
+                    val_iqr = round(iqr, 4)
+                    val_kurtosis = round(kurtosis, 4)
+
                     numeric_stats = {
                         "mean": round(float(s_float.mean()), 4),
-                        "median": round(q50, 4),
+                        "median": val_median,
                         "std": round(float(s_float.std()), 4) if len(s_float) > 1 else 0.0,
                         "min": round(float(s_float.min()), 4),
                         "max": round(float(s_float.max()), 4),
-                        "quantiles": {"q25": round(q25, 4), "q50": round(q50, 4), "q75": round(q75, 4)},
-                        "iqr": round(iqr, 4),
+                        "quantiles": val_quantiles,
+                        "iqr": val_iqr,
                         "skewness": round(skewness, 4),
-                        "kurtosis": round(kurtosis, 4),
+                        "kurtosis": val_kurtosis,
                     }
 
                     if iqr > 0:
@@ -234,6 +254,10 @@ class DatasetProfiler:
                 unique_ratio=round(unique_ratio, 4),
                 cardinality=cardinality,
                 numeric_statistics=numeric_stats,
+                median=val_median,
+                quantiles=val_quantiles,
+                iqr=val_iqr,
+                kurtosis=val_kurtosis,
                 outlier_ratio=round(outlier_ratio, 4),
                 categorical_distribution=cat_dist,
                 rare_category_ratio=round(rare_cat_ratio, 4),
@@ -265,6 +289,8 @@ class DatasetProfiler:
                     class_dist = {str(k): round(float(v), 4) for k, v in vc.items()}
                     counts = target_series.value_counts()
                     imbalance_ratio = round(float(counts.max() / max(1, counts.min())), 4)
+                elif pd.api.types.is_float_dtype(target_series) and t_unique == len(target_series):
+                    problem_candidates = ["regression"]
                 elif t_unique <= 20 or not pd.api.types.is_numeric_dtype(target_series):
                     problem_candidates = ["multiclass_classification", "classification"]
                     vc = target_series.value_counts(normalize=True).head(10).to_dict()
@@ -274,10 +300,10 @@ class DatasetProfiler:
                 else:
                     problem_candidates = ["regression"]
 
-                # Numeric correlations with target
-                if pd.api.types.is_numeric_dtype(target_series):
+                # Numeric correlations with target (safely check std > 0 to avoid zero-variance division warning)
+                if pd.api.types.is_numeric_dtype(target_series) and target_series.std() > 0:
                     for c in cols:
-                        if c != final_target and pd.api.types.is_numeric_dtype(df[c]):
+                        if c != final_target and pd.api.types.is_numeric_dtype(df[c]) and df[c].std() > 0:
                             try:
                                 corr = float(df[c].corr(df[final_target]))
                                 if not np.isnan(corr):
@@ -313,23 +339,39 @@ class DatasetProfiler:
             "timestamp_candidates": schema_result["timestamp_candidates"],
         }
 
+        import hashlib
+        fingerprint_raw = f"{rows}_{columns}_{cols}_{[str(df[c].dtype) for c in cols]}"
+        dataset_fingerprint = hashlib.sha256(fingerprint_raw.encode("utf-8")).hexdigest()[:16]
+
         # Construct unified DatasetProfile
         return DatasetProfile(
             dataset_name=(file_meta or {}).get("filename", "dataset"),
             rows=rows,
             columns=columns,
+            row_count=rows,
+            column_count=columns,
             memory_estimate_mb=round(memory_mb, 4),
+            memory_usage=round(memory_mb, 4),
             dataset_wide_missingness=round(dataset_wide_missingness, 4),
+            global_missingness=round(dataset_wide_missingness, 4),
             duplicate_rows=duplicate_rows,
+            duplicate_row_count=duplicate_rows,
             numeric_count=numeric_count,
             categorical_count=categorical_count,
             datetime_count=datetime_count,
             text_count=text_count,
+            numeric_columns=numeric_columns_list,
+            categorical_columns=categorical_columns_list,
+            datetime_columns=datetime_columns_list,
+            text_columns=text_columns_list,
+            target_column=final_target,
             target_candidate_list=target_candidates,
+            target_candidates=target_candidates,
             class_distribution=class_dist,
             imbalance_ratio=imbalance_ratio,
             feature_target_relationships=feature_target_rel,
             problem_type_candidates=problem_candidates,
+            dataset_fingerprint=dataset_fingerprint,
             detailed_column_profiles=detailed_column_profiles,
             column_profiles=detailed_column_profiles,
             quality_issues=quality_issues,
