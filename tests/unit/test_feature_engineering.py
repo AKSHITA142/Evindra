@@ -134,3 +134,97 @@ def test_provenance_tracking_completeness():
         assert cand.reason != ""
         assert cand.domain in ("numeric", "datetime", "categorical", "text", "feature_engineering")
         assert cand.leakage_status == "LEAKAGE_FREE"
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 — Additional invariant tests
+# ---------------------------------------------------------------------------
+
+def test_no_leakage_candidate_survives():
+    """
+    Invariant: no generated candidate may have leakage_status != 'LEAKAGE_FREE'.
+    Explicitly checks per-candidate status field, which would catch a future regression
+    where a target-derived feature is generated but mis-tagged.
+    """
+    rng = np.random.default_rng(0)
+    df = pd.DataFrame({
+        "num_a": rng.normal(0, 1, 50),
+        "num_b": rng.normal(5, 2, 50),
+        "cat_x": rng.choice(["X", "Y", "Z"], 50).astype(object),
+        "target": rng.integers(0, 2, 50),
+    })
+
+    engineer = AutomatedFeatureEngineer(max_features=50)
+    _, feature_set = engineer.generate_candidate_features(df, target_column="target")
+
+    assert len(feature_set.candidates) > 0, "Must generate at least one candidate"
+    for cand in feature_set.candidates:
+        assert cand.leakage_status == "LEAKAGE_FREE", (
+            f"Candidate '{cand.feature_name}' has leakage_status='{cand.leakage_status}' "
+            f"(expected 'LEAKAGE_FREE')"
+        )
+
+
+def test_target_column_never_in_generated_feature_names():
+    """
+    Invariant: the target column name must never appear as a generated feature name
+    or as part of a source_columns list in any candidate.
+    Uses three distinct target column names to guard against prefix-match edge cases.
+    """
+    for target_col in ("label", "price", "sale_value"):
+        rng = np.random.default_rng(42)
+        n = 40
+        df = pd.DataFrame({
+            "feat_1": rng.normal(0, 1, n),
+            "feat_2": rng.normal(5, 2, n),
+            target_col: rng.integers(0, 2, n),
+        })
+
+        engineer = AutomatedFeatureEngineer(max_features=50)
+        _, feature_set = engineer.generate_candidate_features(df, target_column=target_col)
+
+        # Target must not appear in generated_feature_names list
+        assert target_col not in feature_set.generated_feature_names, (
+            f"Target '{target_col}' found in generated_feature_names"
+        )
+
+        # No candidate feature should be named exactly as the target
+        generated_names = [c.feature_name for c in feature_set.candidates]
+        assert target_col not in generated_names, (
+            f"Target '{target_col}' found as a candidate feature_name"
+        )
+
+        # No candidate should list target as a source column
+        for cand in feature_set.candidates:
+            assert target_col not in cand.source_columns, (
+                f"Target '{target_col}' found in source_columns of candidate "
+                f"'{cand.feature_name}'"
+            )
+
+
+def test_generated_candidate_count_never_exceeds_max_features():
+    """
+    Invariant: total_candidates_generated and len(candidates) must never exceed
+    max_features, regardless of how many numeric pairs are possible.
+    Tests with a wide matrix (many pairs) and multiple tight caps.
+    """
+    rng = np.random.default_rng(7)
+    n_rows = 30
+    n_cols = 8  # 8 numeric cols → C(8,2)=28 pairs × 3 ops = 84 potential candidates
+    df = pd.DataFrame(
+        {f"f{i}": rng.normal(i, 1, n_rows) for i in range(n_cols)},
+    )
+    df["target"] = rng.integers(0, 2, n_rows)
+
+    for cap in (1, 5, 10, 20):
+        engineer = AutomatedFeatureEngineer(max_features=cap)
+        _, feature_set = engineer.generate_candidate_features(df, target_column="target")
+
+        assert feature_set.total_candidates_generated <= cap, (
+            f"cap={cap}: total_candidates_generated={feature_set.total_candidates_generated} "
+            f"exceeds max_features"
+        )
+        assert len(feature_set.candidates) <= cap, (
+            f"cap={cap}: len(candidates)={len(feature_set.candidates)} "
+            f"exceeds max_features"
+        )

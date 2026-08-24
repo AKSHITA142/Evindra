@@ -103,3 +103,97 @@ def test_target_dependent_selection_inside_cv():
     assert len(report.fold_stability) > 0
     for feat, stab in report.fold_stability.items():
         assert 0.0 <= stab <= 1.0
+
+
+# ---------------------------------------------------------------------------
+# Phase 4 — Additional invariant tests
+# ---------------------------------------------------------------------------
+
+def test_perfectly_target_correlated_column_removed():
+    """
+    Invariant: a synthetic column that is a perfect linear function of the target
+    (corr == 1.0) must be detected as TARGET_LEAKAGE and removed.
+    """
+    np.random.seed(0)
+    n = 40
+    target = np.array([0] * 20 + [1] * 20, dtype=float)
+    # Perfectly correlated with target (leakage column)
+    leaked = target * 100.0
+
+    df = pd.DataFrame({
+        "useful_signal": np.linspace(0, 1, n),
+        "leaked_col": leaked,
+        "target": target,
+    })
+
+    selector = FeatureSelector(leakage_corr_threshold=0.999)
+    _, report = selector.select_features(df, target_column="target")
+
+    assert "leaked_col" not in report.selected_features, (
+        "Perfectly target-correlated column must be removed as TARGET_LEAKAGE"
+    )
+    assert any(
+        r.feature_name == "leaked_col" and r.method == "TARGET_LEAKAGE"
+        for r in report.removed_features
+    ), "Removal record must have method='TARGET_LEAKAGE' for 'leaked_col'"
+
+
+def test_zero_variance_column_removed_before_mi_stage():
+    """
+    Invariant: a zero-variance (constant) column must be removed in Step 1 (ZERO_VARIANCE)
+    and must NOT appear in feature_scores, confirming it never reached the MI/RF stage.
+    """
+    np.random.seed(1)
+    n = 30
+    df = pd.DataFrame({
+        "informative": np.linspace(0, 10, n),
+        "constant_col": [99.0] * n,      # zero variance
+        "target": np.where(np.linspace(0, 10, n) > 5, 1, 0),
+    })
+
+    selector = FeatureSelector()
+    _, report = selector.select_features(df, target_column="target")
+
+    assert "constant_col" not in report.selected_features
+    # Must be tagged ZERO_VARIANCE (Step 1), not MI/RF stage
+    removal = next(
+        (r for r in report.removed_features if r.feature_name == "constant_col"),
+        None,
+    )
+    assert removal is not None, "'constant_col' must appear in removed_features"
+    assert removal.method == "ZERO_VARIANCE", (
+        f"Expected method='ZERO_VARIANCE', got '{removal.method}'"
+    )
+    # Must NOT have a feature score (was eliminated before CV stage)
+    assert "constant_col" not in report.feature_scores, (
+        "Zero-variance column must not reach the MI/RF importance scoring stage"
+    )
+
+
+def test_selected_feature_count_never_exceeds_input_count():
+    """
+    Invariant: selected_feature_count must always be <= number of input feature columns.
+    Selector can only remove features, never create new ones.
+    """
+    np.random.seed(3)
+    n = 50
+    df = pd.DataFrame({
+        f"feat_{i}": np.random.randn(n) for i in range(10)
+    })
+    df["target"] = np.random.randint(0, 2, n)
+
+    selector = FeatureSelector()
+    df_out, report = selector.select_features(df, target_column="target")
+
+    n_input_features = len(df.columns) - 1  # exclude target
+    assert report.selected_feature_count <= n_input_features, (
+        f"selected_feature_count={report.selected_feature_count} exceeds "
+        f"input feature count={n_input_features}"
+    )
+    assert len(df_out.columns) <= len(df.columns), (
+        "Output DataFrame must not have more columns than input"
+    )
+    assert report.initial_feature_count == n_input_features, (
+        f"initial_feature_count={report.initial_feature_count} must equal "
+        f"input feature count={n_input_features}"
+    )
