@@ -19,7 +19,11 @@ class CrossValidationRunner:
         y: pd.Series,
         task_type: str = "classification",
     ) -> Tuple[List[float], Any]:
-        """Runs K-Fold cross-validation and returns fold scores and fitted pipeline."""
+        """Runs K-Fold cross-validation and returns fold scores and the pipeline.
+
+        IMPORTANT: Labels in y must already be encoded as integers [0..K-1]
+        by the caller (executor). This method does NOT re-encode labels.
+        """
         n_samples = len(X)
         if n_samples < 2:
             pipeline.fit(X, y)
@@ -33,7 +37,7 @@ class CrossValidationRunner:
             class_counts = pd.Series(y).value_counts()
             min_class_count = class_counts.min()
             if min_class_count < 2 or len(class_counts) > n_samples * 0.5:
-                # Fall back to standard KFold if any class has 1 sample or target is continuous floats
+                # Fall back to standard KFold if any class has 1 sample or target is near-continuous
                 cv = KFold(n_splits=max(2, effective_splits), shuffle=True, random_state=self.random_state)
             else:
                 effective_splits = max(2, min(effective_splits, int(min_class_count)))
@@ -52,7 +56,6 @@ class CrossValidationRunner:
             score = pipeline.score(X_val, y_val)
             scores.append(float(score))
 
-        # Final fit on full dataset
-        pipeline.fit(X, y)
         return scores, pipeline
+
 

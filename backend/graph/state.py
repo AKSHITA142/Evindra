@@ -13,6 +13,7 @@ class WorkflowStateDict(TypedDict, total=False):
     file_path: Optional[str]
     job_status: str
     user_goal: Optional[str]
+    user_task_type: Optional[str]
     semantic_profile: Optional[Dict[str, Any]]
     mission_brief: Optional[Dict[str, Any]]
     experiment_plan: Optional[Dict[str, Any]]
@@ -31,6 +32,7 @@ def create_initial_state(
     job_id: Optional[str] = None,
     file_path: Optional[str] = None,
     user_goal: Optional[str] = None,
+    user_task_type: Optional[str] = "general",
     max_iterations: int = 5,
 ) -> WorkflowStateDict:
     """Creates initial state dictionary for starting a research job graph."""
@@ -40,6 +42,7 @@ def create_initial_state(
         "file_path": file_path,
         "job_status": JobStatus.QUEUED.value,
         "user_goal": user_goal,
+        "user_task_type": user_task_type or "general",
         "semantic_profile": None,
         "mission_brief": None,
         "experiment_plan": None,

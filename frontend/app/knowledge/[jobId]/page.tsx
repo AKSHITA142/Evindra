@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import { motion } from "framer-motion";
 import {
   CheckCircle2,
@@ -11,6 +11,9 @@ import {
   Award,
   Layers,
   ArrowRight,
+  Sliders,
+  Copy,
+  Check,
 } from "lucide-react";
 import { MetricCard } from "@/components/cards/MetricCard";
 
@@ -36,6 +39,16 @@ export default function KnowledgePage({
 
   const findings = report?.recommendation?.key_findings ?? [];
   const rec = report?.recommendation;
+
+  const [copiedConfig, setCopiedConfig] = useState(false);
+  const rawParams = rec?.hyperparameters || {};
+  const paramEntries = Object.entries(rawParams);
+
+  const handleCopyConfig = () => {
+    navigator.clipboard.writeText(JSON.stringify(rawParams, null, 2));
+    setCopiedConfig(true);
+    setTimeout(() => setCopiedConfig(false), 2500);
+  };
 
   if (isError) {
     return (
@@ -88,7 +101,7 @@ export default function KnowledgePage({
       </motion.div>
 
       {/* ── Top Overview Stats ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 md:gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-8">
         <MetricCard
           label="Total Insights"
           value={findings.length}
@@ -108,6 +121,89 @@ export default function KnowledgePage({
           accent="neutral"
         />
       </div>
+
+      {/* ── Optimal Model Hyperparameter Spec Panel ── */}
+      {rec && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.3 }}
+          className="card p-5 mb-8 bg-surface-2 border border-border"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-border-subtle">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-brand-500/10 border border-brand-500/25 flex items-center justify-center">
+                <Sliders className="w-4 h-4 text-brand-400" />
+              </div>
+              <div>
+                <h2 className="text-xs font-bold text-text uppercase tracking-wider">
+                  Optimal Model Hyperparameter Specification
+                </h2>
+                <p className="text-xs text-brand-400 font-semibold mt-0.5">
+                  {rec.recommended_model}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleCopyConfig}
+                className="
+                  inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                  bg-surface-3 hover:bg-surface-4 text-xs font-semibold text-text
+                  border border-border hover:border-brand-500/40 transition-all cursor-pointer
+                "
+              >
+                {copiedConfig ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-success-400" />
+                    <span className="text-success-400 font-bold">Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5 text-text-muted" />
+                    <span>Copy Config</span>
+                  </>
+                )}
+              </button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push(`/recommendation/${jobId}`)}
+                icon={<ChevronRight className="w-3.5 h-3.5" />}
+                className="text-xs text-text-muted hover:text-brand-400"
+              >
+                Full Script
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {paramEntries.length > 0 ? (
+              paramEntries.map(([key, val]) => (
+                <div
+                  key={key}
+                  className="
+                    flex items-center gap-1.5 px-2.5 py-1 rounded-md
+                    bg-surface-3 border border-border-subtle text-xs
+                  "
+                >
+                  <span className="font-mono text-text-muted font-medium">{key}:</span>
+                  <span className="font-mono font-bold text-brand-400">
+                    {typeof val === "boolean" ? (val ? "True" : "False") : String(val)}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <span className="text-xs text-text-muted italic">
+                Optimal standard configuration verified for {rec.recommended_model}
+              </span>
+            )}
+          </div>
+        </motion.div>
+      )}
 
       {isLoading ? (
         <div className="space-y-4">

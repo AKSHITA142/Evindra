@@ -13,6 +13,10 @@ import {
   Zap,
   Target,
   ArrowRight,
+  Layers,
+  TrendingUp,
+  Sliders,
+  CheckCircle2,
 } from "lucide-react";
 
 import { Button } from "@/components/buttons/Button";
@@ -20,7 +24,8 @@ import { ProgressBar } from "@/components/loading/Loading";
 import { uploadDataset, startJob } from "@/services/apiClient";
 import { formatBytes } from "@/utils/formatters";
 
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
+const MAX_UPLOAD_SIZE_MB = Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_SIZE_MB) || 150;
+const MAX_FILE_SIZE = MAX_UPLOAD_SIZE_MB * 1024 * 1024;
 const MISSION_MAX = 500;
 
 const PRESET_MISSIONS = [
@@ -33,6 +38,7 @@ export default function UploadPage() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [mission, setMission] = useState("");
+  const [taskType, setTaskType] = useState<"classification" | "regression" | "general">("general");
   const [status, setStatus] = useState<"idle" | "uploading" | "starting" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -41,7 +47,7 @@ export default function UploadPage() {
     const f = accepted[0];
     if (!f) return;
     if (f.size > MAX_FILE_SIZE) {
-      setErrorMsg("File size must be under 100 MB.");
+      setErrorMsg(`File size must be under ${MAX_UPLOAD_SIZE_MB} MB.`);
       return;
     }
     setFile(f);
@@ -67,12 +73,12 @@ export default function UploadPage() {
         setUploadProgress((p) => Math.min(p + 8, 85));
       }, 200);
 
-      const uploadResult = await uploadDataset(file, mission.trim());
+      const uploadResult = await uploadDataset(file, mission.trim(), taskType);
       clearInterval(progressInterval);
       setUploadProgress(90);
 
       setStatus("starting");
-      const jobResult = await startJob(uploadResult.dataset_id, mission.trim());
+      const jobResult = await startJob(uploadResult.dataset_id, mission.trim(), taskType);
       setUploadProgress(100);
 
       // Small delay for UX
@@ -102,7 +108,7 @@ export default function UploadPage() {
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] pointer-events-none -z-0"
         style={{
           background:
-            "radial-gradient(ellipse, rgba(18,179,163,0.08) 0%, transparent 70%)",
+            "radial-gradient(ellipse, rgba(118,255,3,0.08) 0%, transparent 70%)",
         }}
       />
 
@@ -124,7 +130,7 @@ export default function UploadPage() {
             Upload Dataset & Launch Mission
           </h1>
           <p className="text-text-muted text-sm leading-relaxed max-w-md mx-auto">
-            Provide your raw CSV and research objective. DataPilot-AI handles profiling, preprocessing, pipeline execution, and model optimization.
+            Provide your raw CSV and research objective. Evidra handles profiling, preprocessing, pipeline execution, and model optimization.
           </p>
         </motion.div>
 
@@ -240,7 +246,7 @@ export default function UploadPage() {
                         : "Click to browse or drag & drop CSV file"}
                     </p>
                     <p className="text-text-muted text-xs mt-1">
-                      Supports tabular CSV datasets up to 100 MB
+                      Supports tabular CSV datasets up to {MAX_UPLOAD_SIZE_MB} MB
                     </p>
                   </div>
                 </motion.div>
@@ -309,6 +315,108 @@ export default function UploadPage() {
                 </button>
               ))}
             </div>
+          </div>
+        </motion.div>
+
+        {/* Task Type Selector — Modern Interactive Checkbox Cards */}
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25, duration: 0.4 }}
+          className="w-full mb-6"
+        >
+          <div className="flex items-center justify-between mb-2.5">
+            <label className="text-sm font-semibold text-text flex items-center gap-1.5">
+              <Sliders className="w-4 h-4 text-brand-400" />
+              Machine Learning Problem Type
+            </label>
+            <span className="text-[11px] text-text-muted">Select task objective</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              {
+                id: "general" as const,
+                title: "General / Auto",
+                desc: "Auto-detects target & metrics",
+                badge: "Smart Auto",
+                icon: Sparkles,
+                activeColor: "border-brand-400 bg-brand-500/10 text-brand-400 shadow-[0_0_15px_rgba(118,255,3,0.15)]",
+                iconBg: "bg-brand-500/15 text-brand-400 border-brand-500/30",
+              },
+              {
+                id: "classification" as const,
+                title: "Classification",
+                desc: "Categories, labels & churn",
+                badge: "Precision / F1",
+                icon: Layers,
+                activeColor: "border-info-400 bg-info-500/10 text-info-400 shadow-[0_0_15px_rgba(56,146,246,0.15)]",
+                iconBg: "bg-info-500/15 text-info-400 border-info-500/30",
+              },
+              {
+                id: "regression" as const,
+                title: "Regression",
+                desc: "Numeric value estimation",
+                badge: "R² / RMSE",
+                icon: TrendingUp,
+                activeColor: "border-success-400 bg-success-500/10 text-success-400 shadow-[0_0_15px_rgba(0,230,118,0.15)]",
+                iconBg: "bg-success-500/15 text-success-400 border-success-500/30",
+              },
+            ].map((option) => {
+              const selected = taskType === option.id;
+              const Icon = option.icon;
+
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setTaskType(option.id)}
+                  disabled={status === "uploading" || status === "starting"}
+                  className={`
+                    relative p-4 rounded-xl border text-left transition-all duration-200 flex flex-col justify-between cursor-pointer select-none
+                    ${
+                      selected
+                        ? `${option.activeColor} ring-1 ring-current`
+                        : "bg-surface-2 hover:bg-surface-3 border-border text-text-muted hover:text-text hover:border-border-subtle"
+                    }
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                  `}
+                >
+                  {/* Top Row: Icon + Custom Checkbox */}
+                  <div className="flex items-center justify-between w-full mb-2.5">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center border ${option.iconBg}`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+
+                    {/* Checkbox indicator */}
+                    <div
+                      className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                        selected
+                          ? "bg-brand-500 border-brand-400 text-[#052620] shadow-sm"
+                          : "border-border bg-surface-3 text-transparent"
+                      }`}
+                    >
+                      <CheckCircle2 className={`w-3.5 h-3.5 ${selected ? "opacity-100" : "opacity-0"}`} />
+                    </div>
+                  </div>
+
+                  {/* Text Details */}
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <p className={`text-xs font-bold ${selected ? "text-text" : "text-text"}`}>
+                        {option.title}
+                      </p>
+                    </div>
+                    <p className="text-[11px] text-text-muted leading-tight mb-2">
+                      {option.desc}
+                    </p>
+                    <span className="inline-block text-[9px] font-mono font-semibold uppercase px-1.5 py-0.5 rounded bg-surface-4 text-text-secondary border border-border-subtle">
+                      {option.badge}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </motion.div>
 

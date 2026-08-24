@@ -12,6 +12,26 @@ from backend.schemas.semantic_profile import (
     ResourceProfile,
     SemanticProfile,
 )
+from backend.schemas.dataset_profile import (
+    DatasetProfile,
+    ColumnProfileExtended,
+    TargetCandidateInfo,
+)
+from backend.schemas.decision import (
+    DecisionDomain,
+    DecisionSource,
+    ValidationStatus,
+    DecisionRequest,
+    DecisionResult,
+    UserFallbackRequest,
+    UserFallbackResponse,
+)
+from backend.schemas.preprocessing_plan import (
+    PreprocessingStep,
+    PreprocessingPlan,
+    PlanValidationResult,
+    PlanExecutionResult,
+)
 from backend.schemas.mission_brief import (
     MissionConstraints,
     DatasetCharacteristics,
@@ -52,6 +72,14 @@ __all__ = [
     "QualityIssue",
     "ResourceProfile",
     "SemanticProfile",
+    "DatasetProfile",
+    "ColumnProfileExtended",
+    "TargetCandidateInfo",
+    "DecisionDomain",
+    "DecisionSource",
+    "ValidationStatus",
+    "DecisionRequest",
+    "DecisionResult",
     "MissionConstraints",
     "DatasetCharacteristics",
     "MissionBrief",

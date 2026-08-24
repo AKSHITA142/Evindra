@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Any
 from pydantic import Field
 from backend.schemas.base import BaseSchema
 from backend.schemas.experiment import PipelineDefinition
@@ -9,6 +9,7 @@ class FinalRecommendation(BaseSchema):
     winning_experiment_id: str
     pipeline: PipelineDefinition
     model: str
+    hyperparameters: Dict[str, Any] = Field(default_factory=dict)
     final_metrics: Dict[str, float] = Field(default_factory=dict)
     summary: str
     key_findings: List[str] = Field(default_factory=list)

@@ -4,20 +4,20 @@ import { usePathname } from "next/navigation";
 import { Sidebar, MobileBottomNav } from "@/components/shell/Sidebar";
 import { Topbar } from "@/components/shell/Topbar";
 
-/* Routes that should NOT get the app shell (e.g., the landing page) */
-const NO_SHELL_ROUTES: string[] = [];
+/* Routes that should NOT get the app shell (e.g., the standalone landing page) */
+const NO_SHELL_ROUTES = new Set(["/"]);
 
 
 export function ShellLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const showShell = !NO_SHELL_ROUTES.includes(pathname);
+  const showShell = !NO_SHELL_ROUTES.has(pathname);
 
   if (!showShell) {
     return <>{children}</>;
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-bg">
+    <div className="dash-shell-bg flex h-screen overflow-hidden">
       {/* Desktop sidebar */}
       <Sidebar />
 

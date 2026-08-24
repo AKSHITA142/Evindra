@@ -17,6 +17,8 @@ class ColumnProfile(BaseSchema):
     min: Optional[float] = None
     max: Optional[float] = None
     sample_values: List[Any] = Field(default_factory=list)
+    encoding_recommendation: Optional[str] = None
+    scaling_recommendation: Optional[str] = None
 
 
 class QualityIssue(ConfidenceScoredModel):

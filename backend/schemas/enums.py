@@ -37,6 +37,7 @@ class SeverityLevel(str, Enum):
 class ColumnType(str, Enum):
     NUMERIC = "numeric"
     CATEGORICAL = "categorical"
+    CATEGORICAL_HIGH_CARDINALITY = "categorical_high_cardinality"
     DATETIME = "datetime"
     TEXT = "text"
     BOOLEAN = "boolean"

@@ -29,7 +29,7 @@ export function formatMetric(value: number | null | undefined, isPercent = false
   const num = Number(value);
   if (isPercent) return formatPercent(num * 100);
   if (Math.abs(num) < 1) return num.toFixed(4);
-  return num.toFixed(2);
+  return new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(num);
 }
 
 /** Format a number with thousand separators */

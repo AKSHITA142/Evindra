@@ -53,6 +53,7 @@ class StartJobRequest(BaseModel):
     user_goal: Optional[str] = None
     # Accept `mission` as an alias so the frontend can send either field name
     mission: Optional[str] = None
+    task_type: Optional[str] = "general"
 
 
 # ── Route handlers ─────────────────────────────────────────────────────
@@ -74,6 +75,7 @@ def start_research_job(
     job_record = service.start_job(
         dataset_id=payload.dataset_id,
         user_goal=effective_goal,
+        task_type=payload.task_type or "general",
         background_tasks=background_tasks,
     )
 
@@ -94,6 +96,20 @@ def get_job_status(job_id: str, db: Session = Depends(get_db)):
     return SuccessResponse(
         data=_job_to_frontend(job_record),
         message="Job status retrieved successfully.",
+    )
+
+
+@router.get("/{job_id}/logs", response_model=SuccessResponse)
+def get_job_logs(job_id: str, db: Session = Depends(get_db)):
+    """
+    Retrieves full chronological execution logs and audit trail for a job.
+    """
+    service = JobService(db)
+    logs = service.get_job_logs(job_id)
+
+    return SuccessResponse(
+        data=logs,
+        message="Job execution logs retrieved successfully.",
     )
 
 

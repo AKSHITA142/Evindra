@@ -91,10 +91,22 @@ class DatetimeDecompositionTransformer(BaseEstimator, TransformerMixin):
     def transform(self, X: Union[pd.DataFrame, np.ndarray]) -> pd.DataFrame:
         X_df = pd.DataFrame(X).copy()
         for col in X_df.columns:
-            if pd.api.types.is_datetime64_any_dtype(X_df[col]) or "date" in col.lower() or "time" in col.lower():
+            # Skip numeric columns completely to prevent float/int timestamps from turning into 1970 constant dates and dropping valid features
+            if pd.api.types.is_numeric_dtype(X_df[col]):
+                continue
+
+            is_dt_dtype = pd.api.types.is_datetime64_any_dtype(X_df[col])
+            col_str = str(col).lower()
+            is_dt_named = "date" in col_str or "time" in col_str
+
+            if is_dt_dtype or is_dt_named:
                 try:
                     dt_series = pd.to_datetime(X_df[col], errors="coerce")
-                    if dt_series.notnull().any():
+                    valid_cnt = dt_series.notnull().sum()
+                    orig_non_null = X_df[col].notnull().sum()
+
+                    # Require at least 1 valid datetime and >= 80% valid parse ratio for non-null entries
+                    if valid_cnt > 0 and (orig_non_null == 0 or (valid_cnt / float(orig_non_null)) >= 0.80):
                         X_df[f"{col}_year"] = dt_series.dt.year
                         X_df[f"{col}_month"] = dt_series.dt.month
                         X_df[f"{col}_day"] = dt_series.dt.day

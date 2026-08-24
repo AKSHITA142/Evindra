@@ -4,7 +4,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from io import BytesIO
-from fastapi import UploadFile
+from fastapi import UploadFile, BackgroundTasks
 
 from backend.database.connection import SessionLocal, init_db
 from backend.services.dataset_service import DatasetService
@@ -15,14 +15,20 @@ from backend.schemas.enums import JobStatus
 from backend.core.exceptions import NotFoundException, ValidationException
 
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from backend.database.base import Base
+
+_test_engine = create_engine("sqlite:///:memory:", echo=False)
+
 @pytest.fixture(scope="module", autouse=True)
 def setup_database():
-    init_db()
-
+    Base.metadata.create_all(bind=_test_engine)
 
 @pytest.fixture
 def db_session():
-    session = SessionLocal()
+    Session = sessionmaker(bind=_test_engine)
+    session = Session()
     try:
         yield session
     finally:
@@ -44,9 +50,11 @@ def test_dataset_service_upload(db_session):
     assert dataset_record.semantic_profile is not None
     assert dataset_record.semantic_profile["dataset_summary"]["rows"] == 3
 
-    # Cleanup storage
+    # Cleanup storage and DB
     if os.path.exists(dataset_record.file_path):
         os.remove(dataset_record.file_path)
+    db_session.delete(dataset_record)
+    db_session.commit()
 
 
 def test_job_service_lifecycle(db_session):
@@ -58,7 +66,11 @@ def test_job_service_lifecycle(db_session):
     ds_record = ds_service.upload_dataset(file=upload_file, target_column="target")
 
     job_service = JobService(db_session)
-    job_record = job_service.start_job(dataset_id=ds_record.id, user_goal="Test Goal")
+    job_record = job_service.start_job(
+        dataset_id=ds_record.id,
+        user_goal="Test Goal",
+        background_tasks=BackgroundTasks()
+    )
 
     assert job_record.id.startswith("job_")
     assert job_record.dataset_id == ds_record.id
@@ -72,6 +84,9 @@ def test_job_service_lifecycle(db_session):
     with pytest.raises(NotFoundException):
         job_service.get_job("invalid_job_999")
 
-    # Cleanup storage
+    # Cleanup storage and DB
     if os.path.exists(ds_record.file_path):
         os.remove(ds_record.file_path)
+    db_session.delete(job_record)
+    db_session.delete(ds_record)
+    db_session.commit()

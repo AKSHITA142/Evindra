@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Brain,
@@ -17,6 +17,10 @@ import {
   Layers,
   FlaskConical,
   BookOpen,
+  Sliders,
+  Copy,
+  Check,
+  Terminal,
 } from "lucide-react";
 import { Button } from "@/components/buttons/Button";
 import { MetricCard } from "@/components/cards/MetricCard";
@@ -30,6 +34,7 @@ import { useReport, useExperiments, useDataset } from "@/hooks/useResearch";
 import { downloadReport } from "@/services/apiClient";
 import { formatMetric } from "@/utils/formatters";
 import { useRouter } from "next/navigation";
+import type { QualityWarning, SemanticProfile } from "@/types/api";
 
 
 export default function RecommendationPage({
@@ -42,6 +47,9 @@ export default function RecommendationPage({
   const { data: report, isLoading, isError, refetch } = useReport(jobId);
   const { data: experiments } = useExperiments(jobId);
   const { data: dataset } = useDataset(report?.dataset_id ?? null);
+
+  const [activeCodeTab, setActiveCodeTab] = useState<"python" | "json">("python");
+  const [copiedCode, setCopiedCode] = useState(false);
 
   const rec = report?.recommendation;
 
@@ -73,7 +81,68 @@ export default function RecommendationPage({
         .map(([name, value]) => ({ name, value }))
     : [];
 
-  const qualityWarnings = dataset?.profile?.quality_warnings ?? [];
+  const rawParams = rec?.hyperparameters || {};
+  const paramEntries = Object.entries(rawParams);
+
+  const pythonParamsStr = paramEntries.length > 0
+    ? paramEntries
+        .map(([k, v]) => `    ${k}=${typeof v === "string" ? `"${v}"` : typeof v === "boolean" ? (v ? "True" : "False") : v}`)
+        .join(",\n")
+    : "    random_state=42";
+
+  const pythonSnippet = `# ==============================================================================
+# DataPilot-AI Production Pipeline & Hyperparameter Configuration
+# Model: ${rec?.recommended_model ?? "MLModel"}
+# Target Metric: ${rec?.primary_metric_name ?? "Score"} (${(rec?.primary_metric_value ?? 0).toFixed(4)})
+# ==============================================================================
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+
+# 1. Load your dataset
+df = pd.read_csv("your_dataset.csv")
+
+# 2. Split Features & Target (adjust column names as appropriate)
+X = df.iloc[:, :-1]
+y = df.iloc[:, -1]
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42)
+
+# 3. Instantiate model with DataPilot-AI recommended hyperparameters
+from sklearn.ensemble import ${rec?.recommended_model ?? "HistGradientBoostingClassifier"}
+
+model = ${rec?.recommended_model ?? "HistGradientBoostingClassifier"}(
+${pythonParamsStr}
+)
+
+# 4. Train model & evaluate
+model.fit(X_train, y_train)
+test_score = model.score(X_test, y_test)
+print(f"Optimal Model Test Score: {test_score:.4f}")
+`;
+
+  const jsonSnippet = JSON.stringify(
+    {
+      model_name: rec?.recommended_model,
+      hyperparameters: rawParams,
+      pipeline_steps: rec?.recommended_pipeline,
+      validation_score: rec?.primary_metric_value,
+      confidence_score: rec?.confidence_score,
+    },
+    null,
+    2
+  );
+
+  const handleCopyCode = () => {
+    const textToCopy = activeCodeTab === "python" ? pythonSnippet : jsonSnippet;
+    navigator.clipboard.writeText(textToCopy);
+    setCopiedCode(true);
+    setTimeout(() => setCopiedCode(false), 2500);
+  };
+
+  const profileObj = dataset?.profile as SemanticProfile | undefined;
+  const qualityWarnings: QualityWarning[] = Array.isArray(profileObj?.quality_warnings)
+    ? profileObj.quality_warnings
+    : [];
 
   const handleDownload = async (format: "html" | "markdown") => {
     if (!report?.report_id) return;
@@ -90,12 +159,21 @@ export default function RecommendationPage({
     }
   };
 
-  const handleDownloadDataset = () => {
+  const handleDownloadBusinessDataset = () => {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
-    const downloadUrl = `${backendUrl}/api/v1/reports/${jobId}/download-dataset`;
+    const downloadUrl = `${backendUrl}/api/v1/reports/${jobId}/download-business-dataset`;
     const a = document.createElement("a");
     a.href = downloadUrl;
-    a.download = `preprocessed_${jobId}.csv`;
+    a.download = `business_action_${jobId}.csv`;
+    a.click();
+  };
+
+  const handleDownloadMLMatrix = () => {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+    const downloadUrl = `${backendUrl}/api/v1/reports/${jobId}/download-ml-feature-matrix`;
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = `ml_ready_matrix_${jobId}.csv`;
     a.click();
   };
 
@@ -129,9 +207,17 @@ export default function RecommendationPage({
             variant="secondary"
             size="sm"
             icon={<Download className="w-3.5 h-3.5" />}
-            onClick={() => handleDownloadDataset()}
+            onClick={() => handleDownloadBusinessDataset()}
           >
-            Export Cleaned CSV
+            Business Action CSV
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<Download className="w-3.5 h-3.5" />}
+            onClick={() => handleDownloadMLMatrix()}
+          >
+            ML-Ready Feature Matrix
           </Button>
           <Button
             variant="primary"
@@ -292,7 +378,126 @@ export default function RecommendationPage({
               <p className="text-sm text-text-secondary leading-relaxed font-normal">
                 {rec.reasoning}
               </p>
+            </div>
+          </motion.div>
 
+          {/* ── 3.5 OPTIMAL HYPERPARAMETERS & PRODUCTION TRAINING CODE ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.18 }}
+            className="mb-8"
+          >
+            <div className="card p-6 bg-surface-2 border border-border">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-border-subtle">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-brand-500/10 border border-brand-500/25 flex items-center justify-center">
+                    <Sliders className="w-4 h-4 text-brand-400" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-bold text-text">
+                      Recommended Model Hyperparameters & Training Code
+                    </h2>
+                    <p className="text-xs text-text-muted">
+                      Exact parameters verified and tuned for {rec.recommended_model}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Tab Switcher & Copy Action */}
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <div className="flex rounded-lg bg-surface-3 p-0.5 border border-border-subtle text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setActiveCodeTab("python")}
+                      className={`px-3 py-1 rounded-md font-medium transition-colors ${
+                        activeCodeTab === "python"
+                          ? "bg-brand-500 text-[#052620] font-bold shadow-sm"
+                          : "text-text-muted hover:text-text"
+                      }`}
+                    >
+                      Python Script
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveCodeTab("json")}
+                      className={`px-3 py-1 rounded-md font-medium transition-colors ${
+                        activeCodeTab === "json"
+                          ? "bg-brand-500 text-[#052620] font-bold shadow-sm"
+                          : "text-text-muted hover:text-text"
+                      }`}
+                    >
+                      JSON Config
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyCode}
+                    className="
+                      flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                      bg-surface-3 hover:bg-surface-4 text-xs font-semibold text-text
+                      border border-border hover:border-brand-500/40 transition-all cursor-pointer
+                    "
+                  >
+                    {copiedCode ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-success-400" />
+                        <span className="text-success-400 font-bold">Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-text-muted" />
+                        <span>Copy Code</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Hyperparameter Badges Grid */}
+              <div className="mb-4">
+                <p className="text-[11px] text-text-muted uppercase tracking-wider font-semibold mb-2.5">
+                  Optimal Hyperparameter Values ({paramEntries.length}):
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {paramEntries.length > 0 ? (
+                    paramEntries.map(([key, val]) => (
+                      <div
+                        key={key}
+                        className="
+                          flex items-center gap-2 px-3 py-1.5 rounded-lg
+                          bg-surface-3 border border-border-subtle text-xs
+                        "
+                      >
+                        <span className="font-mono text-text-muted font-medium">{key}:</span>
+                        <span className="font-mono font-bold text-brand-400">
+                          {typeof val === "boolean" ? (val ? "True" : "False") : String(val)}
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-xs text-text-muted italic">
+                      Standard tuned defaults applied for {rec.recommended_model}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Code Snippet Box */}
+              <div className="relative rounded-xl overflow-hidden border border-border-subtle bg-[#0c0c0e]">
+                <div className="flex items-center justify-between px-4 py-2 bg-surface-3/50 border-b border-border-subtle text-[11px] text-text-muted font-mono">
+                  <span className="flex items-center gap-1.5">
+                    <Terminal className="w-3.5 h-3.5 text-brand-400" />
+                    {activeCodeTab === "python" ? "train_optimal_model.py" : "hyperparameters.json"}
+                  </span>
+                  <span className="text-[10px] text-text-muted/60">Ready to execute</span>
+                </div>
+                <pre className="p-4 text-xs font-mono text-text-secondary overflow-x-auto leading-relaxed max-h-72 select-text">
+                  <code>{activeCodeTab === "python" ? pythonSnippet : jsonSnippet}</code>
+                </pre>
+              </div>
             </div>
           </motion.div>
 
@@ -310,7 +515,7 @@ export default function RecommendationPage({
                   Dataset Quality Alerts ({qualityWarnings.length})
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {qualityWarnings.map((w, idx) => (
+                  {qualityWarnings.map((w: { column?: string; severity?: string; message?: string }, idx: number) => (
                     <div key={idx} className="p-3 rounded-lg bg-surface-3 border border-border-subtle text-xs">
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-semibold text-text font-mono">{w.column ?? "Dataset"}</span>
@@ -400,17 +605,42 @@ export default function RecommendationPage({
             </motion.div>
           )}
 
-          {/* ── 7. DOWNLOAD & EXPORT ACTIONS ── */}
+          {/* ── 7. LIVE HTML AUDIT REPORT IFRAME ── */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
+            className="mb-8"
+          >
+            <div className="card p-6 border border-border">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-xs text-brand-400 uppercase tracking-widest font-semibold flex items-center gap-2">
+                  <BookOpen className="w-4 h-4" />
+                  Technical Audit & Validation Report (HTML Output)
+                </p>
+                <span className="text-[10px] text-text-muted font-mono">Real-Time Generated Audit Report</span>
+              </div>
+              <div className="rounded-xl overflow-hidden border border-border bg-bg shadow-inner h-[600px] w-full">
+                <iframe
+                  src={`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000"}/api/v1/reports/${jobId}/html`}
+                  className="w-full h-full border-0"
+                  title="DataPilot-AI HTML Research Report"
+                />
+              </div>
+            </div>
+          </motion.div>
+
+          {/* ── 8. DOWNLOAD & EXPORT ACTIONS ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
             className="card p-6 flex flex-col sm:flex-row items-center justify-between gap-4"
           >
             <div>
-              <p className="text-sm font-bold text-text mb-0.5">Export Production Report</p>
+              <p className="text-sm font-bold text-text mb-0.5">Export Production Report & Dataset</p>
               <p className="text-xs text-text-muted">
-                Download full standalone HTML or Markdown research summary for your team.
+                Download full standalone HTML/Markdown research summary or preprocessed CSV artifact.
               </p>
             </div>
             <div className="flex flex-wrap gap-2.5 shrink-0">
@@ -429,6 +659,22 @@ export default function RecommendationPage({
                 onClick={() => handleDownload("markdown")}
               >
                 Markdown Report
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<Download className="w-3.5 h-3.5" />}
+                onClick={handleDownloadBusinessDataset}
+              >
+                Business Action CSV
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<Download className="w-3.5 h-3.5" />}
+                onClick={handleDownloadMLMatrix}
+              >
+                ML-Ready Matrix
               </Button>
             </div>
           </motion.div>

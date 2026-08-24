@@ -18,30 +18,51 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "DataPilot-AI — Autonomous Data Science Research Engine",
-    template: "%s | DataPilot-AI",
+    default: "Evidra — Autonomous AI Data Scientist & ML Research Engine",
+    template: "%s | Evidra",
   },
   description:
-    "DataPilot-AI autonomously profiles your dataset, runs multi-model experiments, and delivers a final recommendation — all in real time. Upload a CSV and watch your AI data scientist work.",
+    "Evidra is an evidence-driven autonomous AI data scientist that profiles datasets, plans hypotheses, executes multi-model ML experiments, and delivers production-grade recommendations in real time.",
   keywords: [
-    "data science",
-    "machine learning",
+    "Evidra",
+    "Autonomous AI Data Scientist",
+    "Automated Machine Learning",
     "AutoML",
-    "AI research",
-    "automated ML",
-    "data analysis",
+    "AI Research Agent",
+    "LangGraph Orchestration",
+    "Predictive Modeling",
+    "Data Science Pipeline",
+    "Multi-Model Evaluation",
+    "Feature Engineering",
   ],
-  authors: [{ name: "DataPilot-AI Team" }],
+  authors: [{ name: "Evidra AI" }],
+  creator: "Evidra AI",
+  publisher: "Evidra AI",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/evidra-icon-v2.png", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: "/evidra-icon-v2.png",
+  },
   openGraph: {
-    title: "DataPilot-AI — Autonomous Data Science Research Engine",
+    title: "Evidra — Autonomous AI Data Scientist & ML Research Engine",
     description:
-      "Upload a CSV and let AI run your entire data science pipeline automatically.",
+      "Transform raw datasets into high-performance, evidence-backed machine learning pipelines autonomously.",
     type: "website",
+    siteName: "Evidra",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Evidra — Autonomous AI Data Scientist & ML Research Engine",
+    description:
+      "Transform raw datasets into high-performance, evidence-backed machine learning pipelines autonomously.",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0b",
+  themeColor: "#080C0E",
 };
 
 export default function RootLayout({
@@ -50,7 +71,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-scroll-behavior="smooth" className={`dark ${inter.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" data-scroll-behavior="smooth" className={`dark bg-bg ${inter.variable} ${jetbrainsMono.variable}`}>
       <body className={`${inter.className} antialiased bg-bg text-text min-h-screen`}>
         <Providers>
           <ShellLayout>{children}</ShellLayout>
@@ -59,4 +80,3 @@ export default function RootLayout({
     </html>
   );
 }
-

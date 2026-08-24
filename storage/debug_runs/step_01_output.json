@@ -1,0 +1,225 @@
+{
+  "dataset_summary": {
+    "rows": 11,
+    "columns": 6,
+    "memory_mb": 0.0,
+    "filename": "raw_data.csv",
+    "file_size_bytes": 361,
+    "target": {
+      "target_column": "income",
+      "task_type": "regression",
+      "is_imbalanced": false,
+      "class_distribution": {},
+      "distinct_targets": 8
+    },
+    "id_candidates": [],
+    "timestamp_candidates": []
+  },
+  "column_profiles": [
+    {
+      "name": "id",
+      "type": "numeric",
+      "missing_count": 0,
+      "missing_pct": 0.0,
+      "distinct_count": 10,
+      "skewness": 0.1095,
+      "mean": 5.0909,
+      "std": 3.1766,
+      "min": 1.0,
+      "max": 10.0,
+      "sample_values": [
+        1,
+        1,
+        2,
+        3,
+        4
+      ],
+      "encoding_recommendation": null,
+      "scaling_recommendation": "minmax"
+    },
+    {
+      "name": "name",
+      "type": "text",
+      "missing_count": 1,
+      "missing_pct": 9.09,
+      "distinct_count": 9,
+      "skewness": null,
+      "mean": null,
+      "std": null,
+      "min": null,
+      "max": null,
+      "sample_values": [
+        "John Doe",
+        "John Doe",
+        "Jane Smith",
+        "Alex",
+        "Maria Garcia"
+      ],
+      "encoding_recommendation": "onehot",
+      "scaling_recommendation": null
+    },
+    {
+      "name": "age",
+      "type": "numeric",
+      "missing_count": 3,
+      "missing_pct": 27.27,
+      "distinct_count": 6,
+      "skewness": 1.1166,
+      "mean": 32.75,
+      "std": 6.0651,
+      "min": 27.0,
+      "max": 45.0,
+      "sample_values": [
+        29.0,
+        29.0,
+        34.0,
+        27.0,
+        45.0
+      ],
+      "encoding_recommendation": null,
+      "scaling_recommendation": "minmax"
+    },
+    {
+      "name": "country",
+      "type": "categorical",
+      "missing_count": 1,
+      "missing_pct": 9.09,
+      "distinct_count": 6,
+      "skewness": null,
+      "mean": null,
+      "std": null,
+      "min": null,
+      "max": null,
+      "sample_values": [
+        "USA",
+        "USA",
+        "Canada",
+        "USA",
+        "Spain"
+      ],
+      "encoding_recommendation": "onehot",
+      "scaling_recommendation": null
+    },
+    {
+      "name": "gender",
+      "type": "categorical",
+      "missing_count": 1,
+      "missing_pct": 9.09,
+      "distinct_count": 3,
+      "skewness": null,
+      "mean": null,
+      "std": null,
+      "min": null,
+      "max": null,
+      "sample_values": [
+        "Male",
+        "Male",
+        "Female",
+        "Unknown",
+        "Female"
+      ],
+      "encoding_recommendation": "onehot",
+      "scaling_recommendation": null
+    },
+    {
+      "name": "income",
+      "type": "numeric",
+      "missing_count": 1,
+      "missing_pct": 9.09,
+      "distinct_count": 8,
+      "skewness": 0.2384,
+      "mean": 57600.0,
+      "std": 8896.9408,
+      "min": 45000.0,
+      "max": 73000.0,
+      "sample_values": [
+        55000.0,
+        55000.0,
+        62000.0,
+        47000.0,
+        51000.0
+      ],
+      "encoding_recommendation": null,
+      "scaling_recommendation": "standard"
+    }
+  ],
+  "quality_issues": [
+    {
+      "confidence": 0.9,
+      "problem": "high_missing_values",
+      "severity": "high",
+      "description": "Columns with >20% missing values detected: age",
+      "affected_columns": [
+        "age"
+      ]
+    },
+    {
+      "confidence": 0.99,
+      "problem": "duplicate_rows",
+      "severity": "high",
+      "description": "Dataset contains 1 duplicate rows (9.09% of total).",
+      "affected_columns": []
+    }
+  ],
+  "resource_profile": {
+    "execution_mode": "lightweight",
+    "use_lazy_loading": false,
+    "recommended_workers": 2,
+    "memory_mb": 0.0
+  },
+  "recommendation_context": {
+    "distributions": {
+      "id": {
+        "skewness": 0.1095,
+        "shape": "normal"
+      },
+      "age": {
+        "skewness": 1.1166,
+        "shape": "right_skewed"
+      },
+      "income": {
+        "skewness": 0.2384,
+        "shape": "normal"
+      }
+    },
+    "relationships": {
+      "correlation_matrix": {
+        "id": {
+          "id": 1.0,
+          "age": 0.2322,
+          "income": 0.1119
+        },
+        "age": {
+          "id": 0.2322,
+          "age": 1.0,
+          "income": 0.9308
+        },
+        "income": {
+          "id": 0.1119,
+          "age": 0.9308,
+          "income": 1.0
+        }
+      },
+      "high_correlation_pairs": [
+        {
+          "feature_1": "age",
+          "feature_2": "income",
+          "correlation": 0.9308
+        }
+      ]
+    },
+    "outliers": {
+      "outlier_summary": {
+        "age": {
+          "outlier_count": 1,
+          "outlier_pct": 9.09,
+          "lower_bound": 20.0,
+          "upper_bound": 44.0
+        }
+      },
+      "columns_with_outliers": [
+        "age"
+      ]
+    }
+  }
+}

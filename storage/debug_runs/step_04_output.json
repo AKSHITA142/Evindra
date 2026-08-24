@@ -1,0 +1,142 @@
+{
+  "mission": "Optimization for Tabular Optimization",
+  "experiment_budget": 4,
+  "experiments": [
+    {
+      "experiment_id": "EXP_001",
+      "priority": 1,
+      "reason": "",
+      "operations": [
+        {
+          "type": "imputation",
+          "method": "median",
+          "params": {}
+        },
+        {
+          "type": "encoding",
+          "method": "onehot",
+          "params": {
+            "column_encodings": {
+              "name": "onehot",
+              "country": "onehot",
+              "gender": "onehot"
+            }
+          }
+        },
+        {
+          "type": "scaling",
+          "method": "standard",
+          "params": {
+            "column_scalings": {
+              "id": "minmax",
+              "age": "minmax"
+            }
+          }
+        }
+      ],
+      "model_name": "RandomForestRegressor"
+    },
+    {
+      "experiment_id": "EXP_002",
+      "priority": 1,
+      "reason": "",
+      "operations": [
+        {
+          "type": "imputation",
+          "method": "mean",
+          "params": {}
+        },
+        {
+          "type": "encoding",
+          "method": "ordinal",
+          "params": {
+            "column_encodings": {
+              "name": "onehot",
+              "country": "onehot",
+              "gender": "onehot"
+            }
+          }
+        },
+        {
+          "type": "scaling",
+          "method": "robust",
+          "params": {
+            "column_scalings": {
+              "id": "minmax",
+              "age": "minmax"
+            }
+          }
+        }
+      ],
+      "model_name": "LinearRegression"
+    },
+    {
+      "experiment_id": "EXP_003",
+      "priority": 1,
+      "reason": "",
+      "operations": [
+        {
+          "type": "imputation",
+          "method": "median",
+          "params": {}
+        },
+        {
+          "type": "encoding",
+          "method": "frequency",
+          "params": {
+            "column_encodings": {
+              "name": "onehot",
+              "country": "onehot",
+              "gender": "onehot"
+            }
+          }
+        },
+        {
+          "type": "scaling",
+          "method": "minmax",
+          "params": {
+            "column_scalings": {
+              "id": "minmax",
+              "age": "minmax"
+            }
+          }
+        }
+      ],
+      "model_name": "HistGradientBoostingRegressor"
+    },
+    {
+      "experiment_id": "EXP_004",
+      "priority": 1,
+      "reason": "",
+      "operations": [
+        {
+          "type": "imputation",
+          "method": "mean",
+          "params": {}
+        },
+        {
+          "type": "encoding",
+          "method": "onehot",
+          "params": {
+            "column_encodings": {
+              "name": "onehot",
+              "country": "onehot",
+              "gender": "onehot"
+            }
+          }
+        },
+        {
+          "type": "scaling",
+          "method": "standard",
+          "params": {
+            "column_scalings": {
+              "id": "minmax",
+              "age": "minmax"
+            }
+          }
+        }
+      ],
+      "model_name": "KNeighborsRegressor"
+    }
+  ]
+}

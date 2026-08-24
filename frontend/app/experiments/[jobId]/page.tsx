@@ -79,8 +79,8 @@ function ExperimentTableRow({
 
         {/* Model */}
         <td className="px-4 py-3.5">
-          <div>
-            <p className="text-sm font-semibold text-text">{exp.model_name}</p>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-text break-words leading-tight">{exp.model_name}</p>
             <p className="text-xs text-text-muted mt-0.5">{snakeToTitle(exp.model_type)}</p>
           </div>
         </td>
@@ -165,9 +165,17 @@ function ExperimentTableRow({
               >
                 {/* Metrics */}
                 <div>
-                  <p className="text-xs text-text-muted uppercase tracking-wider mb-3 font-semibold">
+                  <p className="text-xs text-text-muted uppercase tracking-wider mb-2 font-semibold">
                     All Metrics
                   </p>
+                  {exp.primary_metric_rationale && (
+                    <div className="mb-3 p-2.5 rounded bg-brand-500/10 border border-brand-500/20 text-xs text-brand-300">
+                      <span className="font-semibold block text-brand-400 mb-0.5">
+                        🎯 Primary Metric Selection Rationale ({exp.primary_metric_name})
+                      </span>
+                      {exp.primary_metric_rationale}
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       ["Accuracy", exp.accuracy],
@@ -252,8 +260,8 @@ function ExperimentCardItem({
           ) : (
             <span className="text-xs font-mono text-text-muted w-5">#{rank}</span>
           )}
-          <div>
-            <p className="text-sm font-semibold text-text">{exp.model_name}</p>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-text break-words leading-tight">{exp.model_name}</p>
             <p className="text-xs text-text-muted">{snakeToTitle(exp.model_type)}</p>
           </div>
         </div>

@@ -14,11 +14,22 @@ class DatasetRepository(BaseRepository[DatasetModel]):
         """Find dataset by SHA256 checksum to detect existing uploads."""
         return self.session.query(DatasetModel).filter(DatasetModel.checksum == checksum).first()
 
+    def list(self, skip: int = 0, limit: int = 100) -> List[DatasetModel]:
+        """List datasets ordered by most recently created first."""
+        return (
+            self.session.query(DatasetModel)
+            .order_by(DatasetModel.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+
     def list_by_owner(self, owner_id: str, skip: int = 0, limit: int = 100) -> List[DatasetModel]:
         """List datasets belonging to a specific owner."""
         return (
             self.session.query(DatasetModel)
             .filter(DatasetModel.owner_id == owner_id)
+            .order_by(DatasetModel.created_at.desc())
             .offset(skip)
             .limit(limit)
             .all()

@@ -1,0 +1,362 @@
+[
+  {
+    "experiment_id": "EXP_001",
+    "pipeline": {
+      "operations": [
+        {
+          "type": "imputation",
+          "method": "median",
+          "params": {}
+        },
+        {
+          "type": "encoding",
+          "method": "onehot",
+          "params": {
+            "column_encodings": {
+              "name": "onehot",
+              "country": "onehot",
+              "gender": "onehot"
+            }
+          }
+        },
+        {
+          "type": "scaling",
+          "method": "standard",
+          "params": {
+            "column_scalings": {
+              "id": "minmax",
+              "age": "minmax"
+            }
+          }
+        }
+      ],
+      "model_name": "RandomForestRegressor"
+    },
+    "model": "RandomForestRegressor",
+    "metrics": {
+      "primary_metric": 0.5,
+      "metrics": {
+        "accuracy": 0.5,
+        "precision": 0.5,
+        "recall": 0.5,
+        "f1": 0.5,
+        "f1_score": 0.5,
+        "balanced_accuracy": 0.5,
+        "roc_auc": 0.0,
+        "cv_mean": 0.0,
+        "cv_std": 0.0,
+        "test_score": 0.5,
+        "train_score": 1.0,
+        "train_test_gap": 0.5
+      },
+      "cv_scores": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "runtime": 0.1978,
+    "status": "completed",
+    "artifacts": {
+      "model_path": null,
+      "processed_dataset_path": "storage/artifacts/EXP_001_cleaned.csv",
+      "feature_importance": {
+        "age": 0.23845242804724237,
+        "age_isnan": 0.03732709838321293,
+        "country_China": 0.07616242403394106,
+        "country_India": 0.07125312464166954,
+        "country_USA": 0.12475399896800826,
+        "country_missing": 0.06507044776975117,
+        "gender_Female": 0.13371605607155143,
+        "gender_Male": 0.10869170836330276,
+        "gender_Unknown": 0.06883723196881092,
+        "gender_missing": 0.07573548175250962
+      },
+      "confusion_matrix": null,
+      "plots": {},
+      "cleaning_audit": {
+        "initial_rows": 11,
+        "final_rows": 9,
+        "initial_cols": 6,
+        "final_cols": 6,
+        "target_nulls_dropped": 1,
+        "duplicates_removed": 1,
+        "extreme_cols_dropped": [],
+        "sparse_rows_dropped": 0
+      }
+    },
+    "error_message": null
+  },
+  {
+    "experiment_id": "EXP_002",
+    "pipeline": {
+      "operations": [
+        {
+          "type": "imputation",
+          "method": "mean",
+          "params": {}
+        },
+        {
+          "type": "encoding",
+          "method": "ordinal",
+          "params": {
+            "column_encodings": {
+              "name": "onehot",
+              "country": "onehot",
+              "gender": "onehot"
+            }
+          }
+        },
+        {
+          "type": "scaling",
+          "method": "robust",
+          "params": {
+            "column_scalings": {
+              "id": "minmax",
+              "age": "minmax"
+            }
+          }
+        }
+      ],
+      "model_name": "LinearRegression"
+    },
+    "model": "LinearRegression",
+    "metrics": {
+      "primary_metric": 0.5,
+      "metrics": {
+        "accuracy": 0.5,
+        "precision": 0.5,
+        "recall": 0.5,
+        "f1": 0.5,
+        "f1_score": 0.5,
+        "balanced_accuracy": 0.5,
+        "roc_auc": 0.0,
+        "cv_mean": 0.0,
+        "cv_std": 0.0,
+        "test_score": 0.5,
+        "train_score": 1.0,
+        "train_test_gap": 0.5
+      },
+      "cv_scores": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "runtime": 0.1895,
+    "status": "completed",
+    "artifacts": {
+      "model_path": null,
+      "processed_dataset_path": "storage/artifacts/EXP_002_cleaned.csv",
+      "feature_importance": {
+        "age": 0.24640353743836724,
+        "age_isnan": 0.03791043171654627,
+        "country_China": 0.07257031877078317,
+        "country_India": 0.0689197913083362,
+        "country_USA": 0.12650399896800824,
+        "country_missing": 0.06127878110308451,
+        "gender_Female": 0.13767357241142072,
+        "gender_Male": 0.10737308091232237,
+        "gender_Unknown": 0.06574538470358904,
+        "gender_missing": 0.0756211026675423
+      },
+      "confusion_matrix": null,
+      "plots": {},
+      "cleaning_audit": {
+        "initial_rows": 11,
+        "final_rows": 9,
+        "initial_cols": 6,
+        "final_cols": 6,
+        "target_nulls_dropped": 1,
+        "duplicates_removed": 1,
+        "extreme_cols_dropped": [],
+        "sparse_rows_dropped": 0
+      }
+    },
+    "error_message": null
+  },
+  {
+    "experiment_id": "EXP_003",
+    "pipeline": {
+      "operations": [
+        {
+          "type": "imputation",
+          "method": "median",
+          "params": {}
+        },
+        {
+          "type": "encoding",
+          "method": "frequency",
+          "params": {
+            "column_encodings": {
+              "name": "onehot",
+              "country": "onehot",
+              "gender": "onehot"
+            }
+          }
+        },
+        {
+          "type": "scaling",
+          "method": "minmax",
+          "params": {
+            "column_scalings": {
+              "id": "minmax",
+              "age": "minmax"
+            }
+          }
+        }
+      ],
+      "model_name": "HistGradientBoostingRegressor"
+    },
+    "model": "HistGradientBoostingRegressor",
+    "metrics": {
+      "primary_metric": 0.5,
+      "metrics": {
+        "accuracy": 0.5,
+        "precision": 0.5,
+        "recall": 0.5,
+        "f1": 0.5,
+        "f1_score": 0.5,
+        "balanced_accuracy": 0.5,
+        "roc_auc": 0.0,
+        "cv_mean": 0.0,
+        "cv_std": 0.0,
+        "test_score": 0.5,
+        "train_score": 1.0,
+        "train_test_gap": 0.5
+      },
+      "cv_scores": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "runtime": 0.1891,
+    "status": "completed",
+    "artifacts": {
+      "model_path": null,
+      "processed_dataset_path": "storage/artifacts/EXP_003_cleaned.csv",
+      "feature_importance": {
+        "age": 0.23845242804724237,
+        "age_isnan": 0.03732709838321293,
+        "country_China": 0.07616242403394106,
+        "country_India": 0.07125312464166954,
+        "country_USA": 0.12475399896800826,
+        "country_missing": 0.06507044776975117,
+        "gender_Female": 0.13371605607155143,
+        "gender_Male": 0.10869170836330276,
+        "gender_Unknown": 0.06883723196881092,
+        "gender_missing": 0.07573548175250962
+      },
+      "confusion_matrix": null,
+      "plots": {},
+      "cleaning_audit": {
+        "initial_rows": 11,
+        "final_rows": 9,
+        "initial_cols": 6,
+        "final_cols": 6,
+        "target_nulls_dropped": 1,
+        "duplicates_removed": 1,
+        "extreme_cols_dropped": [],
+        "sparse_rows_dropped": 0
+      }
+    },
+    "error_message": null
+  },
+  {
+    "experiment_id": "EXP_004",
+    "pipeline": {
+      "operations": [
+        {
+          "type": "imputation",
+          "method": "mean",
+          "params": {}
+        },
+        {
+          "type": "encoding",
+          "method": "onehot",
+          "params": {
+            "column_encodings": {
+              "name": "onehot",
+              "country": "onehot",
+              "gender": "onehot"
+            }
+          }
+        },
+        {
+          "type": "scaling",
+          "method": "standard",
+          "params": {
+            "column_scalings": {
+              "id": "minmax",
+              "age": "minmax"
+            }
+          }
+        }
+      ],
+      "model_name": "KNeighborsRegressor"
+    },
+    "model": "KNeighborsRegressor",
+    "metrics": {
+      "primary_metric": 0.5,
+      "metrics": {
+        "accuracy": 0.5,
+        "precision": 0.5,
+        "recall": 0.5,
+        "f1": 0.5,
+        "f1_score": 0.5,
+        "balanced_accuracy": 0.5,
+        "roc_auc": 0.0,
+        "cv_mean": 0.0,
+        "cv_std": 0.0,
+        "test_score": 0.5,
+        "train_score": 1.0,
+        "train_test_gap": 0.5
+      },
+      "cv_scores": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    "runtime": 0.1904,
+    "status": "completed",
+    "artifacts": {
+      "model_path": null,
+      "processed_dataset_path": "storage/artifacts/EXP_004_cleaned.csv",
+      "feature_importance": {
+        "age": 0.24640353743836724,
+        "age_isnan": 0.03791043171654627,
+        "country_China": 0.07257031877078317,
+        "country_India": 0.0689197913083362,
+        "country_USA": 0.12650399896800824,
+        "country_missing": 0.06127878110308451,
+        "gender_Female": 0.13767357241142072,
+        "gender_Male": 0.10737308091232237,
+        "gender_Unknown": 0.06574538470358904,
+        "gender_missing": 0.0756211026675423
+      },
+      "confusion_matrix": null,
+      "plots": {},
+      "cleaning_audit": {
+        "initial_rows": 11,
+        "final_rows": 9,
+        "initial_cols": 6,
+        "final_cols": 6,
+        "target_nulls_dropped": 1,
+        "duplicates_removed": 1,
+        "extreme_cols_dropped": [],
+        "sparse_rows_dropped": 0
+      }
+    },
+    "error_message": null
+  }
+]

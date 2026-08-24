@@ -11,13 +11,20 @@ class GeneralizationAnalyzer:
         if not result.metrics or result.status != "completed":
             return 0.0
 
-        # Compare primary metric with fold mean if available
+        # Measure overfitting risk using honest train_test_gap if available
+        metrics_dict = result.metrics.metrics or {}
+        if "train_test_gap" in metrics_dict:
+            gap = abs(float(metrics_dict["train_test_gap"]))
+            # Small gap (<0.05) indicates high generalization (low overfitting)
+            gen_score = max(0.0, 1.0 - (gap / 0.25))
+            return round(gen_score, 4)
+
+        # Fallback to CV fold spread if train_test_gap absent
         cv_scores = result.metrics.cv_scores
         if cv_scores:
             cv_min = min(cv_scores)
             cv_max = max(cv_scores)
             gap = cv_max - cv_min
-            # Small gap (<0.05) indicates high generalization
             gen_score = max(0.0, 1.0 - (gap / 0.15))
             return round(gen_score, 4)
 

@@ -2,18 +2,19 @@
 
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Brain } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { HamburgerButton, MobileDrawer } from "./Sidebar";
 
 /* ── Route → human title map ─────────────────────── */
 const ROUTE_TITLES: Record<string, string> = {
   "/": "Overview",
-  "/upload": "New Run",
+  "/overview": "Research Workspace",
+  "/upload": "New Research Run",
   "/timeline": "Research Timeline",
-  "/experiments": "Experiments",
-  "/knowledge": "Knowledge Base",
-  "/recommendation": "Recommendation",
+  "/experiments": "Experiment Matrix",
+  "/knowledge": "Hypotheses & Knowledge Base",
+  "/recommendation": "Executive Report & Recommendations",
 };
 
 
@@ -24,7 +25,7 @@ function getPageTitle(pathname: string): string {
   for (const [prefix, title] of Object.entries(ROUTE_TITLES)) {
     if (pathname.startsWith(prefix + "/")) return title;
   }
-  return "DataPilot-AI";
+  return "Evidra";
 }
 
 /* ── Topbar ──────────────────────────────────────── */
@@ -53,10 +54,14 @@ export function Topbar() {
           <HamburgerButton onClick={() => setDrawerOpen(true)} />
 
           {/* Mobile logo (visible only when sidebar is hidden) */}
-          <Link href="/" className="md:hidden flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-brand-500 flex items-center justify-center">
-              <Brain className="w-3.5 h-3.5 text-white" />
-            </div>
+          <Link href="/overview" className="md:hidden flex items-center gap-2">
+            <Image
+              src="/evidra-icon-v2.png"
+              alt="Evidra"
+              width={200}
+              height={200}
+              className="w-8 h-8 rounded-lg shrink-0 object-contain shadow-sm"
+            />
           </Link>
 
           <h1 className="font-semibold text-sm text-text tracking-tight">
@@ -64,18 +69,6 @@ export function Topbar() {
           </h1>
         </div>
 
-        {/* Right: status pill — real, no fake notifications */}
-        <div className="flex items-center gap-2">
-          <span className="
-            hidden sm:inline-flex items-center gap-1.5
-            px-2.5 py-1 rounded-full
-            bg-surface-3 border border-border-subtle
-            text-xs text-text-muted font-medium
-          ">
-            <span className="w-1.5 h-1.5 rounded-full bg-success-500 animate-pulse-soft" />
-            API Online
-          </span>
-        </div>
       </header>
 
       {/* Mobile drawer */}

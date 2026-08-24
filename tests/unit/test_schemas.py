@@ -79,20 +79,19 @@ def test_mission_brief_defaults():
 
 def test_experiment_plan_and_result():
     op = ExperimentOperation(type="imputation", method="median")
-    spec = ExperimentSpec(experiment_id="EXP_001", operations=[op], model_name="CatBoost")
-    plan = ExperimentPlan(mission="Healthcare", experiment_budget=5, experiments=[spec])
+    spec = ExperimentSpec(experiment_id="EXP_001", dataset_name="test_dataset", operations=[op])
+    plan = ExperimentPlan(plan_id="PLAN_001", experiments=[spec])
 
     assert len(plan.experiments) == 1
     assert plan.experiments[0].operations[0].method == "median"
 
-    pipeline = PipelineDefinition(operations=[op], model_name="CatBoost")
+    pipeline = PipelineDefinition(pipeline_id="PIPE_001", steps=[{"type": "imputation", "method": "median"}])
     metrics = MetricsResult(primary_metric=0.92, metrics={"f1": 0.92, "roc_auc": 0.95})
     result = ExperimentResult(
         experiment_id="EXP_001",
-        pipeline=pipeline,
         model="CatBoost",
         metrics=metrics,
-        runtime=12.5
+        runtime=12.5,
     )
 
     assert result.experiment_id == "EXP_001"

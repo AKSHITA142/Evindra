@@ -47,7 +47,7 @@ class EvaluationEngine:
         )
 
         # 3. Generate Knowledge Base Findings
-        findings = KnowledgeGenerator.generate_findings(results)
+        findings = KnowledgeGenerator.generate_findings(results, rankings)
 
         # 4. Determine Continuation & Formulate Decision
         if best_experiment_id == "none" or best_score == 0.0:

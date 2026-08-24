@@ -1,5 +1,5 @@
 import asyncio
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from fastapi import WebSocket, WebSocketDisconnect
 import logging
 
@@ -45,6 +45,33 @@ class ConnectionManager:
 
         for dead in dead_sockets:
             self.disconnect(dead, job_id)
+
+
+    async def ping_heartbeat(self, job_id: str):
+        """Sends a ping heartbeat message to active WebSocket connections to verify client health."""
+        if job_id not in self.active_connections:
+            return
+
+        dead_sockets: List[WebSocket] = []
+        for connection in list(self.active_connections[job_id]):
+            try:
+                await connection.send_json({"event": "ping", "type": "ping", "timestamp": asyncio.get_event_loop().time()})
+            except Exception as e:
+                logger.warning(f"WebSocket ping heartbeat failed for job {job_id}: {e}")
+                dead_sockets.append(connection)
+
+        for dead in dead_sockets:
+            self.disconnect(dead, job_id)
+
+    def cleanup_dead_connections(self, job_id: Optional[str] = None):
+        """Removes stale or empty connection channels from active_connections registry."""
+        if job_id:
+            if job_id in self.active_connections and not self.active_connections[job_id]:
+                del self.active_connections[job_id]
+        else:
+            empty_keys = [k for k, v in self.active_connections.items() if not v]
+            for k in empty_keys:
+                del self.active_connections[k]
 
 
 # Global singleton instance

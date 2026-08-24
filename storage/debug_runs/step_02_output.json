@@ -1,0 +1,24 @@
+{
+  "objective": "Maximize model predictive accuracy",
+  "constraints": {
+    "max_row_loss": 0.05,
+    "use_only_open_source_models": true,
+    "training_time_limit_minutes": 30,
+    "forbidden_operations": [],
+    "custom_constraints": {}
+  },
+  "dataset_characteristics": {
+    "domain": "General Tabular Data",
+    "risk_level": "Low",
+    "complexity": "Medium"
+  },
+  "success_metrics": [
+    "f1",
+    "accuracy",
+    "roc_auc"
+  ],
+  "avoid": [
+    "data_leakage",
+    "severe_overfitting"
+  ]
+}

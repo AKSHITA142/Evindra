@@ -224,3 +224,28 @@ def test_ml_execution_engine_end_to_end(sample_classification_data, sample_regre
     assert reg_results[0].experiment_id == "EXP_REG_001"
     assert reg_results[0].status == "completed"
     assert "mae" in reg_results[0].metrics.metrics
+
+
+def test_datetime_decomposition_preserves_numeric_time_columns():
+    from backend.ml_execution.feature_engineering import DatetimeDecompositionTransformer
+    df = pd.DataFrame({
+        "reaction_time": [1.25, 2.34, 0.98, 3.41],
+        "execution_date_str": ["2026-01-01", "2026-01-02", "2026-01-03", "2026-01-04"],
+    })
+    transformer = DatetimeDecompositionTransformer()
+    res = transformer.transform(df)
+    assert "reaction_time" in res.columns
+    assert res["reaction_time"].iloc[0] == 1.25
+    assert "execution_date_str_year" in res.columns
+    assert "execution_date_str" not in res.columns
+
+
+def test_binary_classification_metric_averaging():
+    from backend.ml_execution.metrics import MetricEngine
+    y_true = pd.Series([0, 0, 0, 0, 1, 1])
+    y_pred = pd.Series([0, 0, 0, 1, 1, 1])
+    res = MetricEngine.compute_metrics(y_true, y_pred, task_type="classification")
+    # For binary 2-class, recall of class 1 should be 1.0 (2 out of 2 detected), precision 2/3 = 0.6667
+    assert res.metrics["recall"] == 1.0
+    assert res.metrics["precision"] == 0.6667
+

@@ -97,3 +97,23 @@ def test_full_api_workflow_upload_to_report():
     finally:
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
+        # Clean up integration test entities from DB
+        try:
+            db = SessionLocal()
+            from backend.models.dataset import DatasetModel
+            from backend.models.job import JobModel
+            from backend.models.experiment import ExperimentModel
+            from backend.models.report import ReportModel
+            from backend.models.knowledge import KnowledgeEntryModel
+
+            if "job_id" in locals():
+                db.query(ReportModel).filter(ReportModel.job_id == job_id).delete()
+                db.query(KnowledgeEntryModel).filter(KnowledgeEntryModel.job_id == job_id).delete()
+                db.query(ExperimentModel).filter(ExperimentModel.job_id == job_id).delete()
+                db.query(JobModel).filter(JobModel.id == job_id).delete()
+            if "dataset_id" in locals():
+                db.query(DatasetModel).filter(DatasetModel.id == dataset_id).delete()
+            db.commit()
+            db.close()
+        except Exception:
+            pass

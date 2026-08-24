@@ -1,6 +1,7 @@
 import type {
   Dataset,
   Job,
+  JobLogEntry,
   StartJobResponse,
   UploadResponse,
   ExperimentResult,
@@ -8,7 +9,14 @@ import type {
   DashboardData,
 } from "@/types/api";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_PREFIX || "/api/v1";
+const rawBackendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
+const backendUrl = rawBackendUrl.replace("//localhost", "//127.0.0.1");
+const apiPrefix = process.env.NEXT_PUBLIC_API_PREFIX || "/api/v1";
+
+// In browser, communicate directly with FastAPI backend to avoid Next.js 10MB proxy buffer and socket hang-ups
+const BASE_URL = typeof window !== "undefined" && backendUrl
+  ? `${backendUrl}${apiPrefix}`
+  : apiPrefix;
 
 // ── Unique client ID for per-browser session isolation ────────────────
 function getClientId(): string {
@@ -84,14 +92,15 @@ async function request<T>(
 
 export async function uploadDataset(
   file: File,
-  mission: string
+  mission: string,
+  taskType: string = "general"
 ): Promise<UploadResponse> {
   const formData = new FormData();
   formData.append("file", file);
-  // Send target_column if provided as mission, otherwise send as mission field
   if (mission) {
     formData.append("mission", mission);
   }
+  formData.append("task_type", taskType);
 
   const res = await fetch(`${BASE_URL}/upload`, {
     method: "POST",
@@ -124,25 +133,30 @@ export async function getDataset(datasetId: string): Promise<Dataset> {
   return request<Dataset>(`/datasets/${datasetId}`);
 }
 
-export async function listDatasets(): Promise<Dataset[]> {
-  return request<Dataset[]>("/datasets");
+export async function listDatasets(skip = 0, limit = 50): Promise<Dataset[]> {
+  return request<Dataset[]>(`/datasets?skip=${skip}&limit=${limit}`);
 }
 
 // ── Job APIs ──────────────────────────────────────────────────────────
 
 export async function startJob(
   datasetId: string,
-  mission: string
+  mission: string,
+  taskType: string = "general"
 ): Promise<StartJobResponse> {
   return request<StartJobResponse>("/jobs/start", {
     method: "POST",
-    // Send both user_goal and mission so the backend accepts either field
-    body: JSON.stringify({ dataset_id: datasetId, user_goal: mission, mission }),
+    // Send user_goal, mission, and task_type so backend receives explicit task_type selection
+    body: JSON.stringify({ dataset_id: datasetId, user_goal: mission, mission, task_type: taskType }),
   });
 }
 
 export async function getJob(jobId: string): Promise<Job> {
   return request<Job>(`/jobs/${jobId}`);
+}
+
+export async function getJobLogs(jobId: string): Promise<JobLogEntry[]> {
+  return request<JobLogEntry[]>(`/jobs/${jobId}/logs`);
 }
 
 export async function cancelJob(jobId: string): Promise<void> {

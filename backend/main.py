@@ -73,6 +73,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.get_cors_origins_list(),
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:[0-9]+)?",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -92,14 +93,7 @@ async def custom_logging_middleware(request: Request, call_next):
 # 3. Exception Handlers
 register_exception_handlers(app)
 
-# 4. Include API Routers (both un-prefixed and /api/v1 prefixed for compatibility)
-app.include_router(health_router)
-app.include_router(upload_router)
-app.include_router(jobs_router)
-app.include_router(experiments_router)
-app.include_router(reports_router)
-app.include_router(dashboard_router)
-
+# 4. Include API Routers (strictly /api/v1 prefixed)
 api_prefix = "/api/v1"
 app.include_router(health_router, prefix=api_prefix)
 app.include_router(upload_router, prefix=api_prefix)
@@ -108,9 +102,6 @@ app.include_router(experiments_router, prefix=api_prefix)
 app.include_router(reports_router, prefix=api_prefix)
 app.include_router(dashboard_router, prefix=api_prefix)
 app.include_router(websocket_router, prefix=api_prefix)
-
-# Register /api/v1/datasets as a standalone router
-# so the frontend's GET /api/v1/datasets and GET /api/v1/datasets/{id} work
 app.include_router(datasets_router, prefix=api_prefix)
 
 

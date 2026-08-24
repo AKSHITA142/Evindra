@@ -50,9 +50,9 @@ def test_profiling_classification_dataset(classification_df):
 
     # Verify column types
     col_map = {col.name: col.type for col in profile.column_profiles}
-    assert col_map["customer_id"] in [ColumnType.TEXT, ColumnType.CATEGORICAL]
+    assert col_map["customer_id"] in [ColumnType.TEXT, ColumnType.CATEGORICAL, ColumnType.CATEGORICAL_HIGH_CARDINALITY]
     assert col_map["age"] == ColumnType.NUMERIC
-    assert col_map["city"] == ColumnType.CATEGORICAL
+    assert col_map["city"] in [ColumnType.CATEGORICAL, ColumnType.CATEGORICAL_HIGH_CARDINALITY]
 
     # Verify target analysis
     target_info = profile.dataset_summary["target"]

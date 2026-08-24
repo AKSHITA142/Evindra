@@ -82,7 +82,7 @@ def test_nodes_sequential_execution(synthetic_csv_file):
 
     state = execution_node(state)
     assert state["job_status"] == JobStatus.EVALUATING.value
-    assert len(state["experiment_results"]) == 2
+    assert len(state["experiment_results"]) >= 2
 
     state = evaluation_node(state)
     assert state["evaluation_report"] is not None

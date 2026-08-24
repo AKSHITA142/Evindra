@@ -53,9 +53,25 @@ class MarkdownReportGenerator:
         lines.append("## 4. Winning Model & Pipeline Architecture")
         lines.append(f"**Selected Model Family:** `{recommendation.model}`\n")
         lines.append("### Pipeline Steps:")
-        if recommendation.pipeline and recommendation.pipeline.operations:
-            for idx, op in enumerate(recommendation.pipeline.operations, start=1):
-                lines.append(f"{idx}. **{op.type.title()}**: `{op.method}`")
+        ops = []
+        if recommendation.pipeline:
+            if hasattr(recommendation.pipeline, "operations"):
+                ops = recommendation.pipeline.operations
+            elif isinstance(recommendation.pipeline, dict):
+                ops = recommendation.pipeline.get("operations", [])
+
+        if ops:
+            for idx, op in enumerate(ops, start=1):
+                if hasattr(op, "type"):
+                    op_type = getattr(op, "type", "step")
+                    op_method = getattr(op, "method", "default")
+                elif isinstance(op, dict):
+                    op_type = op.get("type", "step")
+                    op_method = op.get("method", "default")
+                else:
+                    op_type = "step"
+                    op_method = str(op)
+                lines.append(f"{idx}. **{op_type.title()}**: `{op_method}`")
         else:
             lines.append("Standard preprocessing pipeline applied.")
         lines.append("")

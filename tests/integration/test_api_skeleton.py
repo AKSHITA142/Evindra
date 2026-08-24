@@ -17,8 +17,8 @@ def test_root_endpoint():
 
 
 def test_health_check_endpoint():
-    """Verify GET /health returns 200 OK with app and DB status."""
-    response = client.get("/health")
+    """Verify GET /api/v1/health returns 200 OK with app and DB status."""
+    response = client.get("/api/v1/health")
     assert response.status_code == 200
     json_data = response.json()
     assert "data" in json_data
@@ -29,9 +29,9 @@ def test_health_check_endpoint():
 
 
 def test_registered_route_skeletons():
-    """Verify all registered API routes (/upload, /jobs, /experiments, /reports) respond correctly."""
+    """Verify all registered API routes respond correctly."""
     # Health
-    r_health = client.get("/health")
+    r_health = client.get("/api/v1/health")
     assert r_health.status_code == 200
 
     # Root
@@ -41,7 +41,7 @@ def test_registered_route_skeletons():
 
 def test_correlation_id_header():
     """Verify X-Correlation-ID header is generated and returned."""
-    response = client.get("/health")
+    response = client.get("/api/v1/health")
     assert response.status_code == 200
     assert "x-correlation-id" in response.headers
 
@@ -51,7 +51,7 @@ def test_phase_3_error_response_gate():
     PHASE 3 GATE VERIFICATION:
     Verify that a deliberately-thrown AppException returns a 404 with exact ErrorResponse shape.
     """
-    response = client.get("/health/error-test")
+    response = client.get("/api/v1/health/error-test")
     assert response.status_code == 404
     json_data = response.json()
 

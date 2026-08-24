@@ -10,7 +10,7 @@ class ExperimentRepository(BaseRepository[ExperimentModel]):
     def __init__(self, session: Session):
         super().__init__(ExperimentModel, session)
 
-    def list_by_job(self, job_id: str, skip: int = 0, limit: int = 100) -> List[ExperimentModel]:
+    def list_by_job(self, job_id: str, skip: int = 0, limit: int = 500) -> List[ExperimentModel]:
         """List experiments associated with a job (indexed lookup pattern)."""
         return (
             self.session.query(ExperimentModel)

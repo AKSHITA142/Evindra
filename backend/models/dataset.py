@@ -18,6 +18,7 @@ class DatasetModel(Base, TimestampMixin):
     row_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     column_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     checksum: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, index=True)
+    mission_brief: Mapped[Optional[str]] = mapped_column(String(2048), nullable=True)
     semantic_profile: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONType, nullable=True)
 
     # Relationships

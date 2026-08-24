@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
-import { getJob, getExperiments, getReport, getDashboard, listDatasets, getDataset } from "@/services/apiClient";
+import { getJob, getJobLogs, getExperiments, getReport, getDashboard, listDatasets, getDataset } from "@/services/apiClient";
 
 import { wsClient } from "@/services/websocketClient";
 import { useResearchStore } from "@/store/researchStore";
@@ -23,6 +23,16 @@ export function useJob(jobId: string | null) {
       }
       return 10_000; // 10-second fallback polling
     },
+  });
+}
+
+// ── useJobLogs — fetch historical execution logs ──────────────────────
+export function useJobLogs(jobId: string | null) {
+  return useQuery({
+    queryKey: ["jobLogs", jobId],
+    queryFn: () => (jobId ? getJobLogs(jobId) : Promise.resolve([])),
+    enabled: !!jobId,
+    staleTime: 10_000,
   });
 }
 
@@ -53,12 +63,20 @@ export function useWebSocket(jobId: string | null) {
   const { setWsConnected, setCurrentStage, setProgressPercent, addLogMessage } =
     useResearchStore();
   const unsubRef = useRef<(() => void) | null>(null);
+  const unsubStatusRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    if (!jobId) return;
+    if (!jobId) {
+      setWsConnected(false);
+      return;
+    }
+
+    // Subscribe to live connection status changes
+    unsubStatusRef.current = wsClient.onStatusChange((connected) => {
+      setWsConnected(connected);
+    });
 
     wsClient.connect(jobId);
-    setWsConnected(wsClient.isConnected);
 
     const handler = (event: WSEvent) => {
       const { data } = event;
@@ -104,7 +122,7 @@ export function useWebSocket(jobId: string | null) {
 
     return () => {
       unsubRef.current?.();
-      setWsConnected(false);
+      unsubStatusRef.current?.();
     };
   }, [jobId, queryClient, setWsConnected, setCurrentStage, setProgressPercent, addLogMessage]);
 }
@@ -120,10 +138,10 @@ export function useDashboard() {
 }
 
 // ── useDatasets — full list for the datasets table ───────────────────
-export function useDatasets() {
+export function useDatasets(skip = 0, limit = 50) {
   return useQuery({
-    queryKey: ["datasets"],
-    queryFn: listDatasets,
+    queryKey: ["datasets", skip, limit],
+    queryFn: () => listDatasets(skip, limit),
     staleTime: 60_000,
   });
 }

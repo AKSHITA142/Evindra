@@ -22,14 +22,14 @@ import {
 // with no inherent severity meaning). For severity-coded data, use the
 // semantic tokens directly (success/warning/error) instead of this array.
 export const CHART_COLORS = [
-  "#12b3a3", // brand-500
-  "#6bdbcd", // brand-300
-  "#0a6e65", // brand-700
-  "#7c8ba1", // info / neutral steel
-  "#f59e0b", // warning-500 (attention)
-  "#a6a6a2", // text-secondary (other/neutral)
-  "#33c7b6", // brand-400
-  "#4ade80", // success-400 (only if a "healthy" segment applies)
+  "#76FF03", // brand-500 (lime primary)
+  "#a6ff5c", // brand-300 (light lime)
+  "#4fae00", // brand-700 (deep lime)
+  "#3892F6", // info (neutral steel-blue)
+  "#FFC107", // warning-500 (attention)
+  "#A1A4AA", // text-secondary (other/neutral)
+  "#8CFF20", // brand-400 (bright lime)
+  "#00E676", // success-500 (only if a "healthy" segment applies)
 ];
 
 const tooltipStyle = {
@@ -40,9 +40,9 @@ const tooltipStyle = {
   fontSize: "12px",
 };
 
-const axisTick = { fontSize: 11, fill: "#a6a6a2" };
+const axisTick = { fontSize: 11, fill: "#70757C" };
 const gridStroke = "rgba(255,255,255,0.05)";
-const brandCursor = { fill: "rgba(18,179,163,0.08)" };
+const brandCursor = { fill: "rgba(118,255,3,0.08)" };
 
 type TooltipValue = number | string | ReadonlyArray<number | string> | undefined;
 type TooltipName = number | string | undefined;
@@ -70,7 +70,7 @@ interface AppBarChartProps {
 export function AppBarChart({
   data,
   label = "Value",
-  color = "#12b3a3",
+  color = "#76FF03",
   height = 240,
 }: AppBarChartProps) {
   return (
@@ -132,16 +132,28 @@ export function HorizontalBarChart({
           cursor={brandCursor}
           formatter={(v: TooltipValue) => [formatVal(v), label]}
         />
-        <Bar dataKey="value" fill="#12b3a3" radius={[0, 4, 4, 0]} />
+        <Bar dataKey="value" fill="#76FF03" radius={[0, 4, 4, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
 }
 
+// Semantic Job Status Color Palette
+export const STATUS_COLORS: Record<string, string> = {
+  completed: "#00E676", // success green
+  success: "#00E676",
+  running: "#76FF03",   // lime (active)
+  queued: "#FFC107",    // warning amber
+  failed: "#FF3D00",    // error red
+  error: "#FF3D00",
+  cancelled: "#70757C", // muted grey
+};
+
 // ── Pie / Donut Chart ─────────────────────────
 interface PieItem {
   name: string;
   value: number;
+  color?: string;
 }
 
 interface AppPieChartProps {
@@ -152,35 +164,35 @@ interface AppPieChartProps {
 
 export function AppPieChart({
   data,
-  height = 240,
-  innerRadius = 60,
+  height = 220,
+  innerRadius = 55,
 }: AppPieChartProps) {
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <PieChart>
+      <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
         <Pie
           data={data}
           cx="50%"
           cy="50%"
           innerRadius={innerRadius}
-          outerRadius={innerRadius + 40}
-          paddingAngle={3}
+          outerRadius={innerRadius + 32}
+          paddingAngle={4}
           dataKey="value"
+          stroke="var(--surface-2)"
+          strokeWidth={2}
         >
-          {data.map((_, i) => (
-            <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-          ))}
+          {data.map((entry, i) => {
+            const key = entry.name.toLowerCase();
+            const fill = entry.color || STATUS_COLORS[key] || CHART_COLORS[i % CHART_COLORS.length];
+            return <Cell key={i} fill={fill} />;
+          })}
         </Pie>
         <Tooltip
           contentStyle={tooltipStyle}
-          formatter={(v: TooltipValue) => [formatVal(v), ""]}
-        />
-        <Legend
-          iconType="circle"
-          iconSize={8}
-          formatter={(value: string) => (
-            <span style={{ color: "#a6a6a2", fontSize: 11 }}>{value}</span>
-          )}
+          formatter={(v: TooltipValue, name: TooltipName) => [
+            `${v} jobs`,
+            String(name).charAt(0).toUpperCase() + String(name).slice(1),
+          ]}
         />
       </PieChart>
     </ResponsiveContainer>
@@ -218,7 +230,7 @@ export function AppScatterChart({
           tick={axisTick}
           axisLine={false}
           tickLine={false}
-          label={{ value: xLabel, position: "insideBottom", offset: -4, fill: "#6e6e6b", fontSize: 11 }}
+          label={{ value: xLabel, position: "insideBottom", offset: -4, fill: "#70757C", fontSize: 11 }}
         />
         <YAxis
           type="number"
@@ -230,13 +242,13 @@ export function AppScatterChart({
         />
         <Tooltip
           contentStyle={tooltipStyle}
-          cursor={{ strokeDasharray: "3 3", stroke: "rgba(18,179,163,0.4)" }}
+          cursor={{ strokeDasharray: "3 3", stroke: "rgba(118,255,3,0.4)" }}
           formatter={(v: TooltipValue, name: TooltipName) => [
             formatVal(v),
             name ?? "",
           ]}
         />
-        <Scatter data={data} fill="#12b3a3" opacity={0.85} />
+        <Scatter data={data} fill="#76FF03" opacity={0.85} />
       </ScatterChart>
     </ResponsiveContainer>
   );

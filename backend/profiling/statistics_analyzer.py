@@ -44,6 +44,8 @@ class StatisticsAnalyzer:
             std_val = None
             min_val = None
             max_val = None
+            encoding_rec = None
+            scaling_rec = None
 
             if col_type == ColumnType.NUMERIC:
                 clean_num = series.dropna().astype(float)
@@ -58,6 +60,28 @@ class StatisticsAnalyzer:
                         if not np.isnan(skew_calc):
                             skewness = round(float(skew_calc), 4)
 
+                    # Determine scaling recommendation for numeric columns
+                    if skewness is not None and (abs(skewness) > 1.5 or (std_val > abs(mean_val) if mean_val != 0 else False)):
+                        scaling_rec = "robust"
+                    elif min_val is not None and max_val is not None and min_val >= 0 and max_val <= 100:
+                        scaling_rec = "minmax"
+                    else:
+                        scaling_rec = "standard"
+
+            elif col_type in (ColumnType.CATEGORICAL, ColumnType.TEXT, ColumnType.UNKNOWN):
+                # Check cardinality threshold
+                if distinct_count > 10:
+                    col_type = ColumnType.CATEGORICAL_HIGH_CARDINALITY
+                    encoding_rec = "frequency"
+                else:
+                    # Check for ordered/ordinal categorical patterns in sample values
+                    samples_str = [str(sv).lower().strip() for sv in sample_vals_cleaned]
+                    ordinal_keywords = {"low", "medium", "high", "small", "large", "rating", "grade", "level", "tier", "stage"}
+                    if any(s in ordinal_keywords for s in samples_str):
+                        encoding_rec = "ordinal"
+                    else:
+                        encoding_rec = "onehot"
+
             profiles.append(
                 ColumnProfile(
                     name=str(col),
@@ -71,6 +95,8 @@ class StatisticsAnalyzer:
                     min=min_val,
                     max=max_val,
                     sample_values=sample_vals_cleaned,
+                    encoding_recommendation=encoding_rec,
+                    scaling_recommendation=scaling_rec,
                 )
             )
 

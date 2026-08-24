@@ -1,5 +1,6 @@
 from typing import Dict, List
 from backend.schemas.experiment import ExperimentResult
+from backend.evaluation.metric_analyzer import MetricAnalyzer
 
 
 class TradeoffAnalyzer:
@@ -7,17 +8,20 @@ class TradeoffAnalyzer:
 
     @classmethod
     def calculate_efficiency(cls, results: List[ExperimentResult]) -> Dict[str, float]:
-        """Calculates normalized efficiency score (primary_metric / runtime) in [0.0, 1.0]."""
+        """Calculates normalized efficiency score (normalized_score / runtime) in [0.0, 1.0]."""
         efficiency_map: Dict[str, float] = {}
         completed = [r for r in results if r.status == "completed" and r.metrics]
 
         if not completed:
             return {r.experiment_id: 0.0 for r in results}
 
+        norm_scores = MetricAnalyzer.normalize_scores(completed)
+
         raw_ratios = {}
         for r in completed:
             runtime = max(0.001, r.runtime or 1.0)
-            score = float(r.metrics.primary_metric)
+            # Use normalized relative score so higher score is always better (for both classification and regression)
+            score = norm_scores.get(r.experiment_id, 0.5)
             raw_ratios[r.experiment_id] = score / runtime
 
         max_ratio = max(raw_ratios.values()) if raw_ratios else 1.0

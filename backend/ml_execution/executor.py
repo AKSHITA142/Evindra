@@ -20,6 +20,7 @@ from backend.ml_execution.pipeline_builder import PipelineBuilder
 from backend.ml_execution.cross_validation import CrossValidationRunner
 from backend.ml_execution.metrics import MetricEngine
 from backend.ml_execution.logger import ExperimentLogger
+from backend.ml_execution.pre_cleaner import DataPreCleaner
 
 logger = logging.getLogger("datapilot.ml_execution.executor")
 
@@ -36,23 +37,45 @@ class MLExecutionEngine:
         self.cv_runner = CrossValidationRunner(n_splits=self.n_splits, random_state=self.random_state)
 
     @staticmethod
+    def _is_subtoken_metadata(col_name: str) -> bool:
+        """
+        Splits column header by delimiters (_, -, space, dot) to check if any token
+        matches metadata keywords (name, patient_name, doctor_id, client_email, etc.).
+        """
+        import re
+        col_str = str(col_name).lower().strip()
+        meta_root_tokens = {
+            "id", "name", "email", "ssn", "token", "hash", "uuid", "address",
+            "phone", "code", "index", "rowid", "guid", "number"
+        }
+        tokens = [t for t in re.split(r"[_\-\s\.]+", col_str) if t]
+        for token in tokens:
+            if token in meta_root_tokens or (len(token) > 2 and (token.endswith("_id") or token.startswith("id_"))):
+                return True
+        return False
+
+    @staticmethod
     def _extract_meta_and_features(df: pd.DataFrame, target_column: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """
-        Separates non-predictive identifier/metadata columns (id, name, uuid, *_id)
-        from ML feature columns X to prevent target memorization and preserve ID columns in export.
+        Separates non-predictive identifier/metadata columns (id, patient_name, doctor_id, email, etc.)
+        from ML feature columns X to prevent target memorization, feature explosion, and preserve metadata in export.
         """
         meta_cols = []
         n_rows = len(df)
         for col in df.columns:
             if col == target_column:
                 continue
-            col_lower = col.lower().strip()
-            if col_lower in ("id", "name", "uuid", "row_id", "user_id", "customer_id", "index"):
+
+            # 1. Sub-token pattern matching (patient_name, doctor_id, client_email, etc.)
+            if MLExecutionEngine._is_subtoken_metadata(col):
                 meta_cols.append(col)
-            elif col_lower.endswith("_id") or col_lower.startswith("id_"):
-                meta_cols.append(col)
-            elif df[col].dtype == object and df[col].nunique() == n_rows and n_rows > 5:
-                meta_cols.append(col)
+                continue
+
+            # 2. High-cardinality string/object text columns (unique_ratio >= 0.70)
+            if n_rows > 3 and (df[col].dtype == object or str(df[col].dtype) in ("category", "string")):
+                unique_ratio = df[col].nunique() / float(n_rows)
+                if unique_ratio >= 0.70:
+                    meta_cols.append(col)
 
         meta_df = df[meta_cols].copy()
         feature_cols = [c for c in df.columns if c not in meta_cols and c != target_column]
@@ -75,24 +98,45 @@ class MLExecutionEngine:
         df_copy = df.copy()
 
         try:
-            # 1. Validation
-            self.validator.validate_spec(spec, df_copy, target_column, mission_brief)
+            # 0. Leakage-Safe Data Pre-Cleaning (Deduplication, target nulls, >75% missing cols, >50% sparse rows)
+            df_cleaned, cleaning_audit = DataPreCleaner.clean_raw_dataset(df_copy, target_column)
 
-            # Separate metadata (id, name), features X, and target y
-            meta_df, X = self._extract_meta_and_features(df_copy, target_column)
-            y = df_copy[target_column]
+            # Separate metadata (id, name), features X, and target y from pre-cleaned data
+            meta_df, X = self._extract_meta_and_features(df_cleaned, target_column)
+            y = df_cleaned[target_column]
 
-            # For classification, clean NaNs in y and encode string targets
+            # Single LabelEncoder for classification: encode ONCE before splitting
+            # This guarantees consistent integer labels [0..K-1] across train and test.
             if task_type == "classification":
                 from sklearn.preprocessing import LabelEncoder
-                valid_mask = y.notna()
-                meta_df = meta_df[valid_mask]
-                X = X[valid_mask]
-                y = y[valid_mask]
+                le = LabelEncoder()
+                y = pd.Series(le.fit_transform(y.astype(str)), index=y.index)
 
-                if y.dtype == object or isinstance(y.iloc[0], str) or str(y.dtype) in ("category", "string"):
-                    le = LabelEncoder()
-                    y = pd.Series(le.fit_transform(y.astype(str)), index=y.index)
+            # 1b. Perform 80/20 train/test split BEFORE fitting or CV
+            from sklearn.model_selection import train_test_split
+
+            stratify_target = None
+            if task_type == "classification" and len(y) >= 10:
+                class_counts = pd.Series(y).value_counts()
+                if len(class_counts) > 1 and class_counts.min() >= 2:
+                    stratify_target = y
+
+            try:
+                X_train, X_test, y_train, y_test, meta_train, meta_test = train_test_split(
+                    X, y, meta_df,
+                    test_size=0.2,
+                    random_state=self.random_state,
+                    stratify=stratify_target,
+                )
+            except Exception:
+                # Fallback to non-stratified split if sample size or class distribution prevents stratification
+                X_train, X_test, y_train, y_test, meta_train, meta_test = train_test_split(
+                    X, y, meta_df,
+                    test_size=0.2,
+                    random_state=self.random_state,
+                    stratify=None,
+                )
+
 
             # 2. Build Pipeline
             pipeline = self.pipeline_builder.build_pipeline(
@@ -101,43 +145,74 @@ class MLExecutionEngine:
                 random_state=self.random_state,
             )
 
-            # 3. Cross-Validation & Fit
+            # 3. Cross-Validation on training split X_train, y_train only
             cv_scores, fitted_pipeline = self.cv_runner.run_cv(
                 pipeline=pipeline,
-                X=X,
-                y=y,
+                X=X_train,
+                y=y_train,
                 task_type=task_type,
             )
 
-            # 4. Predict for metric calculation
-            y_pred = fitted_pipeline.predict(X)
-            y_proba = None
+            # Refit pipeline on full training set
+            fitted_pipeline.fit(X_train, y_train)
+
+            # 4. Predict & evaluate ONCE on held-out test split (X_test, y_test)
+            y_pred_test = fitted_pipeline.predict(X_test)
+            y_proba_test = None
             if task_type == "classification" and hasattr(fitted_pipeline, "predict_proba"):
                 try:
-                    y_proba = fitted_pipeline.predict_proba(X)
+                    y_proba_test = fitted_pipeline.predict_proba(X_test)
                 except Exception:
                     pass
 
-            # 5. Compute Metrics
+            # Compute actual training score matching task type for honest train_test_gap
+            if task_type == "classification":
+                train_score = float(fitted_pipeline.score(X_train, y_train))
+            else:
+                from sklearn.metrics import mean_squared_error
+                y_pred_train = fitted_pipeline.predict(X_train)
+                train_score = abs(float(np.sqrt(mean_squared_error(y_train, y_pred_train))))
+
+            # 5. Compute Metrics on held-out test split with CV scores
+            user_goal_text = mission_brief.user_goal if (mission_brief and hasattr(mission_brief, "user_goal")) else ""
             metrics_result = MetricEngine.compute_metrics(
-                y_true=y,
-                y_pred=y_pred,
-                y_proba=y_proba,
+                y_true=y_test,
+                y_pred=y_pred_test,
+                y_proba=y_proba_test,
                 task_type=task_type,
                 cv_scores=cv_scores,
+                train_score=train_score,
+                user_goal=user_goal_text,
+                target_column=target_column,
+                column_names=list(X.columns) if hasattr(X, "columns") else None,
             )
 
-            # 6. Extract Feature Importances if available
+            # 6. Extract Feature Importances with real column names
             feature_importance: Optional[Dict[str, float]] = None
             try:
+                # Get real feature names from the preprocessing pipeline output
+                feature_names = None
+                try:
+                    preproc_steps = Pipeline(fitted_pipeline.steps[:-1])
+                    X_sample = preproc_steps.transform(X_train.iloc[:1])
+                    if isinstance(X_sample, pd.DataFrame):
+                        feature_names = list(X_sample.columns)
+                except Exception:
+                    pass
+
                 model_step = fitted_pipeline.named_steps.get("model")
                 if hasattr(model_step, "feature_importances_"):
-                    # Use feature names from previous steps if available
                     importances = model_step.feature_importances_
-                    feature_importance = {f"feature_{i}": float(val) for i, val in enumerate(importances)}
+                    if feature_names and len(feature_names) == len(importances):
+                        feature_importance = {str(name): float(val) for name, val in zip(feature_names, importances)}
+                    else:
+                        feature_importance = {f"feature_{i}": float(val) for i, val in enumerate(importances)}
                 elif hasattr(model_step, "coef_"):
                     coefs = np.abs(model_step.coef_).flatten()
-                    feature_importance = {f"feature_{i}": float(val) for i, val in enumerate(coefs)}
+                    if feature_names and len(feature_names) == len(coefs):
+                        feature_importance = {str(name): float(val) for name, val in zip(feature_names, coefs)}
+                    else:
+                        feature_importance = {f"feature_{i}": float(val) for i, val in enumerate(coefs)}
             except Exception:
                 pass
 
@@ -157,19 +232,41 @@ class MLExecutionEngine:
                 else:
                     clean_features_df = X.copy()
 
-                # Re-attach metadata columns (id, name, etc.) and target column
-                clean_df = pd.concat([meta_df.reset_index(drop=True), clean_features_df.reset_index(drop=True)], axis=1)
-                clean_df[target_column] = y.values
-
                 os.makedirs("storage/artifacts", exist_ok=True)
-                processed_csv_path = f"storage/artifacts/{spec.experiment_id}_cleaned.csv"
-                clean_df.to_csv(processed_csv_path, index=False)
+
+                # Format 1: Business Action CSV (Original raw columns + Predictions, unscaled & unencoded for human readability)
+                business_df = df_cleaned.copy().reset_index(drop=True)
+                if 'y_pred_test' in locals() and y_pred_test is not None and len(y_pred_test) == len(business_df):
+                    if 'le' in locals() and hasattr(le, 'inverse_transform'):
+                        try:
+                            business_df["predicted_" + str(target_column)] = le.inverse_transform(y_pred_test)
+                        except Exception:
+                            business_df["predicted_" + str(target_column)] = y_pred_test
+                    else:
+                        business_df["predicted_" + str(target_column)] = y_pred_test
+
+                business_csv_path = f"storage/artifacts/{spec.experiment_id}_business_action.csv"
+                business_df.to_csv(business_csv_path, index=False)
+
+                # Format 2: ML-Ready Feature Matrix CSV (Pure engineered numeric X and target y)
+                ml_df = clean_features_df.copy().reset_index(drop=True)
+                ml_df[target_column] = y.values
+
+                ml_ready_csv_path = f"storage/artifacts/{spec.experiment_id}_ml_ready.csv"
+                ml_df.to_csv(ml_ready_csv_path, index=False)
+
+                # Legacy fallback compatibility
+                legacy_csv_path = f"storage/artifacts/{spec.experiment_id}_cleaned.csv"
+                business_df.to_csv(legacy_csv_path, index=False)
+
+                processed_csv_path = ml_ready_csv_path
             except Exception as pe:
                 logger.warning(f"Could not export preprocessed dataset CSV: {pe}")
 
             artifacts = Artifacts(
                 processed_dataset_path=processed_csv_path,
                 feature_importance=feature_importance,
+                cleaning_audit=cleaning_audit.to_dict() if 'cleaning_audit' in locals() else None,
             )
             runtime = logger_inst.finish(status="completed", metrics=metrics_result.metrics)
 

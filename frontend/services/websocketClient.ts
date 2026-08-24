@@ -1,20 +1,28 @@
 import type { WSEvent, WSEventType } from "@/types/api";
 
 type WSListener = (event: WSEvent) => void;
+type WSStatusListener = (connected: boolean) => void;
 
 class WebSocketClient {
   private socket: WebSocket | null = null;
   private jobId: string | null = null;
   private listeners: Map<WSEventType | "all", Set<WSListener>> = new Map();
+  private statusListeners: Set<WSStatusListener> = new Set();
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private isManualClose = false;
 
   connect(jobId: string): void {
-    if (this.socket?.readyState === WebSocket.OPEN && this.jobId === jobId) {
-      return; // already connected to same job
+    // If already connected or currently connecting to the same job, prevent closing/re-opening
+    if (
+      this.socket &&
+      (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING) &&
+      this.jobId === jobId
+    ) {
+      return;
     }
+
     this.disconnect();
     this.jobId = jobId;
     this.isManualClose = false;
@@ -43,6 +51,7 @@ class WebSocketClient {
 
       this.socket.onopen = () => {
         this.reconnectAttempts = 0;
+        this._notifyStatus(true);
       };
 
       this.socket.onmessage = (ev: MessageEvent) => {
@@ -50,14 +59,11 @@ class WebSocketClient {
           const raw = JSON.parse(ev.data as string);
 
           // Normalize the incoming payload into the WSEvent shape the frontend expects.
-          // Backend now sends: { event, job_id, timestamp, data: { status, stage, ... } }
-          // But older payloads may have fields at top level without a nested `data` object.
           const event: WSEvent = {
             event: raw.event,
             job_id: raw.job_id ?? this.jobId ?? "",
             timestamp: raw.timestamp ?? new Date().toISOString(),
             data: {
-              // Prefer nested data, fall back to top-level fields
               status: raw.data?.status ?? raw.status,
               stage: raw.data?.stage ?? raw.stage,
               progress_percent: raw.data?.progress_percent ?? raw.progress_percent ?? raw.progress,
@@ -76,15 +82,17 @@ class WebSocketClient {
       };
 
       this.socket.onclose = () => {
+        this._notifyStatus(false);
         if (!this.isManualClose) {
           this._scheduleReconnect();
         }
       };
 
       this.socket.onerror = () => {
-        this.socket?.close();
+        this._notifyStatus(false);
       };
     } catch {
+      this._notifyStatus(false);
       this._scheduleReconnect();
     }
   }
@@ -106,6 +114,16 @@ class WebSocketClient {
     if (all) all.forEach((fn) => fn(event));
   }
 
+  private _notifyStatus(connected: boolean): void {
+    this.statusListeners.forEach((fn) => {
+      try {
+        fn(connected);
+      } catch {
+        // ignore listener errors
+      }
+    });
+  }
+
   on(eventType: WSEventType | "all", listener: WSListener): () => void {
     if (!this.listeners.has(eventType)) {
       this.listeners.set(eventType, new Set());
@@ -118,15 +136,32 @@ class WebSocketClient {
     };
   }
 
+  onStatusChange(listener: WSStatusListener): () => void {
+    this.statusListeners.add(listener);
+    // Emit current status immediately
+    listener(this.isConnected);
+    return () => {
+      this.statusListeners.delete(listener);
+    };
+  }
+
   disconnect(): void {
     this.isManualClose = true;
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     if (this.socket) {
+      this.socket.onopen = null;
       this.socket.onclose = null;
-      this.socket.close();
+      this.socket.onerror = null;
+      this.socket.onmessage = null;
+      try {
+        this.socket.close();
+      } catch {
+        // ignore
+      }
       this.socket = null;
     }
     this.jobId = null;
+    this._notifyStatus(false);
   }
 
   get isConnected(): boolean {

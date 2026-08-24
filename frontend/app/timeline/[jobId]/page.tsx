@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -12,6 +12,7 @@ import {
   Terminal,
   Copy,
   Check,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/buttons/Button";
 import { ProgressBar, Spinner, SkeletonCard } from "@/components/loading/Loading";
@@ -20,8 +21,8 @@ import { StageTimeline } from "@/components/cards/StageTimeline";
 import { Modal } from "@/components/modals/Modal";
 import { GlassCard } from "@/components/cards/GlassCard";
 import { ErrorState } from "@/components/feedback/ErrorState";
-import { useJob, useWebSocket } from "@/hooks/useResearch";
-import { useResearchStore } from "@/store/researchStore";
+import { useJob, useWebSocket, useJobLogs } from "@/hooks/useResearch";
+import { useResearchStore, type LogMessage } from "@/store/researchStore";
 import { cancelJob } from "@/services/apiClient";
 
 import type { TimelineStage } from "@/components/cards/StageTimeline";
@@ -68,23 +69,61 @@ export default function TimelinePage({
   const router = useRouter();
 
   const { data: job, isLoading, error: jobError, refetch } = useJob(jobId);
+  const { data: dbLogs } = useJobLogs(jobId);
   useWebSocket(jobId);
-
 
   const { wsConnected, progressPercent, currentStage, logMessages } =
     useResearchStore();
+
+  // Combine historical database audit logs with live WebSocket messages
+  const displayedLogs = useMemo(() => {
+    const logsMap = new Map<string, LogMessage>();
+    (dbLogs || []).forEach((log) => {
+      logsMap.set(log.id, log as LogMessage);
+    });
+    (logMessages || []).forEach((log) => {
+      logsMap.set(log.id, log);
+    });
+    return Array.from(logsMap.values());
+  }, [dbLogs, logMessages]);
 
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [copiedLogs, setCopiedLogs] = useState(false);
 
-  // Auto-navigate to experiments when job completes
+  // Track if job was actively running when user entered this page session
+  const wasActiveSessionRef = useRef<boolean | null>(null);
+
+  // Smart Auto-navigate ONLY on first-time live transition from running -> completed
   useEffect(() => {
-    if (job?.status === "completed") {
-      const t = setTimeout(() => router.push(`/experiments/${jobId}`), 1500);
+    if (!job) return;
+
+    // Determine initial state on mount
+    if (wasActiveSessionRef.current === null) {
+      wasActiveSessionRef.current = job.status === "running" || job.status === "queued";
+    }
+
+    const storageKey = `datapilot_redirected_${jobId}`;
+    const alreadyRedirected =
+      typeof window !== "undefined"
+        ? sessionStorage.getItem(storageKey) === "true"
+        : false;
+
+    // Only redirect if the job was actively running during this live session AND hasn't been redirected yet
+    if (
+      job.status === "completed" &&
+      wasActiveSessionRef.current === true &&
+      !alreadyRedirected
+    ) {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(storageKey, "true");
+      }
+      const t = setTimeout(() => {
+        router.push(`/experiments/${jobId}`);
+      }, 1500);
       return () => clearTimeout(t);
     }
-  }, [job?.status, jobId, router]);
+  }, [job?.status, jobId, router, job]);
 
   const handleCancel = async () => {
     setCancelling(true);
@@ -99,7 +138,7 @@ export default function TimelinePage({
   };
 
   const copyLogText = () => {
-    const text = logMessages
+    const text = displayedLogs
       .map(
         (m) =>
           `[${new Date(m.timestamp).toISOString()}] [${m.level.toUpperCase()}] ${
@@ -210,11 +249,46 @@ export default function TimelinePage({
                   </div>
                 </div>
 
-                {/* Mission Card */}
+                {/* Mission Completed Notification Banner */}
+                {job.status === "completed" && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="mb-4 p-3 rounded-xl bg-success-500/10 border border-success-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs"
+                  >
+                    <div className="flex items-center gap-2 text-success-400">
+                      <CheckCircle2 className="w-4 h-4 shrink-0 text-success-400" />
+                      <span>
+                        <strong className="font-semibold text-success-400">Research Complete!</strong> All pipeline stages finished.
+                      </span>
+                    </div>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      icon={<ChevronRight className="w-3.5 h-3.5" />}
+                      onClick={() => router.push(`/experiments/${jobId}`)}
+                      className="shrink-0"
+                    >
+                      View Experiments
+                    </Button>
+                  </motion.div>
+                )}
+
+                {/* Mission Card & Dataset Overview Link */}
                 <GlassCard padding="sm" hover={false} className="mb-4">
-                  <p className="text-[11px] text-text-muted uppercase tracking-wider mb-1 flex items-center gap-1.5 font-semibold">
-                    <FlaskConical className="w-3 h-3 text-brand-400" /> Research Mission
-                  </p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-[11px] text-text-muted uppercase tracking-wider flex items-center gap-1.5 font-semibold">
+                      <FlaskConical className="w-3 h-3 text-brand-400" /> Research Mission
+                    </p>
+                    {job.dataset_id && (
+                      <button
+                        onClick={() => router.push(`/overview/${job.dataset_id}`)}
+                        className="text-[11px] font-semibold text-brand-400 hover:text-brand-300 underline"
+                      >
+                        View Dataset Overview →
+                      </button>
+                    )}
+                  </div>
                   <p className="text-xs sm:text-sm text-text leading-relaxed font-normal">{job.mission}</p>
                 </GlassCard>
 
@@ -257,19 +331,6 @@ export default function TimelinePage({
               </motion.div>
             )}
 
-            {/* Success Banner */}
-            {job?.status === "completed" && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="mb-6 p-4 rounded-xl bg-success-500/10 border border-success-500/25 text-center"
-              >
-                <p className="text-xs sm:text-sm font-semibold text-success-400">
-                  ✓ Research Complete — Loading Experiment Leaderboard…
-                </p>
-              </motion.div>
-            )}
-
             {/* Stepper Timeline */}
             <StageTimeline stages={stages} />
           </div>
@@ -285,20 +346,20 @@ export default function TimelinePage({
               <span className="text-xs font-semibold text-text uppercase tracking-wider">
                 Live Execution Console
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded bg-surface-3 text-text-muted font-mono">
-                {logMessages.length} events
+              <span className="text-[10px] px-2 py-0.5 rounded bg-surface-3 text-brand-400 font-mono font-bold">
+                {displayedLogs.length} events
               </span>
             </div>
 
             <div className="flex items-center gap-2">
               {isLoading && <Spinner size="sm" />}
-              {logMessages.length > 0 && (
+              {displayedLogs.length > 0 && (
                 <button
                   onClick={copyLogText}
-                  className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text px-2 py-1 rounded bg-surface-3 border border-border-subtle transition-colors"
+                  className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text px-2 py-1 rounded bg-surface-3 border border-border-subtle transition-colors cursor-pointer"
                   title="Copy log to clipboard"
                 >
-                  {copiedLogs ? <Check className="w-3 h-3 text-success-400" /> : <Copy className="w-3 h-3" />}
+                  {copiedLogs ? <Check className="w-3 h-3 text-success-400" /> : <Copy className="w-3 h-3 text-text-muted" />}
                   {copiedLogs ? "Copied" : "Copy"}
                 </button>
               )}
@@ -308,19 +369,28 @@ export default function TimelinePage({
           {/* Console Log Stream Window */}
           <div className="flex-1 overflow-y-auto p-4 font-mono text-xs space-y-1.5 bg-surface-1">
             <AnimatePresence initial={false}>
-              {logMessages.length === 0 && (
+              {displayedLogs.length === 0 && (
                 <motion.div
                   key="empty"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="text-text-muted italic pt-8 text-center flex flex-col items-center gap-2"
                 >
-                  <Spinner size="md" />
-                  <p className="text-xs">Waiting for live WebSocket research events…</p>
+                  {job?.status === "completed" ? (
+                    <>
+                      <CheckCircle2 className="w-8 h-8 text-success-400 opacity-60 mb-1" />
+                      <p className="text-xs text-text-secondary">Execution logs archived for this completed job.</p>
+                    </>
+                  ) : (
+                    <>
+                      <Spinner size="md" />
+                      <p className="text-xs">Waiting for live WebSocket research events…</p>
+                    </>
+                  )}
                 </motion.div>
               )}
 
-              {logMessages.map((msg) => (
+              {displayedLogs.map((msg) => (
                 <motion.div
                   key={msg.id}
                   initial={{ opacity: 0, x: -4 }}
@@ -337,12 +407,12 @@ export default function TimelinePage({
                   }`}
                 >
                   <span className="text-text-muted shrink-0 text-[11px]">
-                    {new Date(msg.timestamp).toLocaleTimeString("en-US", {
+                    {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString("en-US", {
                       hour12: false,
                       hour: "2-digit",
                       minute: "2-digit",
                       second: "2-digit",
-                    })}
+                    }) : "--:--:--"}
                   </span>
                   <span className="shrink-0 uppercase text-[10px] font-bold opacity-60 w-16 text-right font-sans">
                     [{msg.stage ?? msg.level}]

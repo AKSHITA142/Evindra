@@ -1,0 +1,58 @@
+{
+  "winning_experiment_id": "EXP_003",
+  "pipeline": {
+    "operations": [
+      {
+        "type": "imputation",
+        "method": "median",
+        "params": {}
+      },
+      {
+        "type": "encoding",
+        "method": "frequency",
+        "params": {
+          "column_encodings": {
+            "name": "onehot",
+            "country": "onehot",
+            "gender": "onehot"
+          }
+        }
+      },
+      {
+        "type": "scaling",
+        "method": "minmax",
+        "params": {
+          "column_scalings": {
+            "id": "minmax",
+            "age": "minmax"
+          }
+        }
+      }
+    ],
+    "model_name": "HistGradientBoostingRegressor"
+  },
+  "model": "HistGradientBoostingRegressor",
+  "final_metrics": {
+    "primary_metric": 0.5,
+    "accuracy": 0.5,
+    "precision": 0.5,
+    "recall": 0.5,
+    "f1": 0.5,
+    "f1_score": 0.5,
+    "balanced_accuracy": 0.5,
+    "roc_auc": 0.0,
+    "cv_mean": 0.0,
+    "cv_std": 0.0,
+    "test_score": 0.5,
+    "train_score": 1.0,
+    "train_test_gap": 0.5
+  },
+  "summary": "Experiment 'EXP_003' utilizing HistGradientBoostingRegressor achieved the top performance with primary test score 0.5000 and zero data leakage.",
+  "key_findings": [
+    "HistGradientBoostingRegressor outperformed alternative pipeline candidates across cross-validation folds.",
+    "Strict 80/20 train/test split and per-fold column transformation eliminated data leakage."
+  ],
+  "exported_artifacts": {
+    "model_pickle": "storage/models/model_EXP_003.pkl"
+  }
+}

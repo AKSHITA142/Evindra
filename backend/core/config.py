@@ -20,7 +20,12 @@ class Settings(BaseSettings):
     
     # File Storage
     storage_dir: str = Field(default="./storage", alias="STORAGE_DIR")
-    max_upload_size_mb: int = Field(default=500, alias="MAX_UPLOAD_SIZE_MB")
+    max_upload_size_mb: int = Field(default=150, alias="MAX_UPLOAD_SIZE_MB")
+    storage_backend: str = Field(default="local", alias="STORAGE_BACKEND")  # 'supabase' or 'local'
+    supabase_url: Optional[str] = Field(default=None, alias="SUPABASE_URL")
+    supabase_key: Optional[str] = Field(default=None, alias="SUPABASE_KEY")
+    supabase_bucket: str = Field(default="datasets", alias="SUPABASE_BUCKET")
+    max_ml_sample_rows: int = Field(default=50000, alias="MAX_ML_SAMPLE_ROWS")
     
     # Server Parameters
     server_host: str = Field(default="127.0.0.1", alias="SERVER_HOST")
@@ -35,7 +40,8 @@ class Settings(BaseSettings):
     model_name: Optional[str] = Field(default=None, alias="MODEL_NAME")
     gemini_api_key: Optional[str] = Field(default=None, alias="GEMINI_API_KEY")
     openai_api_key: Optional[str] = Field(default=None, alias="OPENAI_API_KEY")
-    llm_model_name: Optional[str] = Field(default=None, alias="LLM_MODEL_NAME")
+    llm_model_name: Optional[str] = Field(default="gemini-3.5-flash-lite", alias="LLM_MODEL_NAME")
+    gemini_model_name: Optional[str] = Field(default="gemini-3.5-flash-lite", alias="GEMINI_MODEL_NAME")
 
 
     model_config = SettingsConfigDict(
@@ -45,13 +51,29 @@ class Settings(BaseSettings):
     )
 
     def get_cors_origins_list(self) -> List[str]:
-        """Parse CORS origins if passed as a comma-separated string."""
+        """
+        Parse CORS origins. Allows wildcard '*' ONLY when ENVIRONMENT is explicitly 'development' or 'dev'.
+        In non-development environments, wildcard origins are filtered out and explicit origins (or frontend_url) are required.
+        """
+        raw_list: List[str] = []
         if isinstance(self.cors_origins, str):
-            return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
-        return self.cors_origins
+            raw_list = [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        elif isinstance(self.cors_origins, list):
+            raw_list = [str(origin).strip() for origin in self.cors_origins if str(origin).strip()]
+
+        is_dev = str(self.environment).strip().lower() in ("development", "dev", "local")
+        
+        # When CORS origins contains wildcard '*', replace with explicit localhost URLs so allow_credentials=True does not violate CORS spec
+        if "*" in raw_list:
+            explicit_defaults = [self.frontend_url, "http://localhost:3000", "http://127.0.0.1:3000"]
+            non_wildcard = [o for o in raw_list if o != "*"]
+            combined = list(dict.fromkeys(explicit_defaults + non_wildcard))
+            return combined
+
+        return raw_list if raw_list else [self.frontend_url, "http://localhost:3000", "http://127.0.0.1:3000"]
 
 
 @lru_cache()
 def get_settings() -> Settings:
-    """Returns a cached singleton Settings instance."""
+    """Returns application Settings instance loaded from environment and .env."""
     return Settings()

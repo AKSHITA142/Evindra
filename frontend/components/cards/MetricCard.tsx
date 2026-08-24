@@ -60,6 +60,10 @@ export function MetricCard({
   accent = "neutral",
 }: MetricCardProps) {
   const colors = accentMap[accent];
+  const isString = typeof value === "string";
+  const strLen = isString ? value.length : 0;
+  const isLong = strLen > 15;
+  const isVeryLong = strLen > 24;
 
   return (
     <motion.div
@@ -67,29 +71,39 @@ export function MetricCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.28, ease: "easeOut" }}
       whileHover={{ y: -2 }}
-      className={cn("card p-5 flex items-start gap-4 depth-hover", className)}
-
+      className={cn("card p-4 sm:p-5 flex items-start gap-3 sm:gap-4 depth-hover min-w-0 h-full", className)}
     >
       {icon && (
         <div
           className={cn(
-            "w-10 h-10 rounded-md flex items-center justify-center shrink-0 border",
+            "w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0 border mt-0.5",
             colors.bg,
             colors.border
           )}
         >
-          <span className={cn("w-5 h-5", colors.icon)}>{icon}</span>
+          <span className={cn("w-4 h-4 sm:w-5 sm:h-5", colors.icon)}>{icon}</span>
         </div>
       )}
       <div className="min-w-0 flex-1">
-        <p className="text-xs text-text-secondary font-medium mb-1 uppercase tracking-wider">
+        <p className="text-[11px] sm:text-xs text-text-secondary font-medium mb-1 uppercase tracking-wider truncate">
           {label}
         </p>
-        <p className={cn("text-2xl font-bold leading-none tabular-nums", colors.value)}>
+        <p
+          className={cn(
+            "font-bold",
+            isVeryLong
+              ? "text-xs sm:text-sm leading-snug break-words"
+              : isLong
+              ? "text-sm sm:text-base leading-snug break-words"
+              : "text-2xl leading-none tabular-nums",
+            colors.value
+          )}
+          title={isString ? value : undefined}
+        >
           {value}
         </p>
         {subtext && (
-          <p className="text-xs text-text-muted mt-1.5 truncate">{subtext}</p>
+          <p className="text-xs text-text-muted mt-1.5 leading-tight break-words">{subtext}</p>
         )}
         {trend && trendValue && (
           <p
