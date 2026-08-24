@@ -14,10 +14,30 @@ from backend.schemas.dataset_profile import DatasetProfile, ColumnProfileExtende
 from backend.core.confidence_policy import ConfidencePolicy, DEFAULT_CONFIDENCE_POLICY
 from backend.engine.rule_engine import RuleEngine
 from backend.engine.user_fallback import UserFallbackHandler
-from backend.services.rag.hybrid_retrieval_service import HybridRetrievalService, retrieve_relevant_scenarios
-from backend.services.rag.reranker_service import rerank_scenarios
-from backend.services.rag.decision_service import LLMDecisionService
-from backend.services.rag.context_builder import build_rag_evidence_package, RAGContextBuilder
+
+# RAG services depend on optional cloud packages (google-genai, supabase, psycopg2).
+# Import lazily so the orchestrator is usable even when those packages are absent.
+try:
+    from backend.services.rag.hybrid_retrieval_service import HybridRetrievalService, retrieve_relevant_scenarios
+    from backend.services.rag.reranker_service import rerank_scenarios
+    from backend.services.rag.decision_service import LLMDecisionService
+    from backend.services.rag.context_builder import build_rag_evidence_package, RAGContextBuilder
+    _RAG_AVAILABLE = True
+except Exception:  # ImportError or any cloud-SDK init error
+    HybridRetrievalService = None  # type: ignore[assignment,misc]
+    LLMDecisionService = None  # type: ignore[assignment,misc]
+    RAGContextBuilder = None  # type: ignore[assignment,misc]
+
+    def retrieve_relevant_scenarios(*args, **kwargs):  # type: ignore[misc]
+        return []
+
+    def rerank_scenarios(scenarios, *args, **kwargs):  # type: ignore[misc]
+        return scenarios
+
+    def build_rag_evidence_package(*args, **kwargs):  # type: ignore[misc]
+        return {}
+
+    _RAG_AVAILABLE = False
 
 logger = logging.getLogger("datapilot.engine.orchestrator")
 

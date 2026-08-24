@@ -105,6 +105,12 @@ class ReportGeneratorAgent(BaseAgent):
         if not winning_res and results:
             winning_res = results[0]
 
+        _default_steps = [
+            {"type": "imputation", "method": "median"},
+            {"type": "encoding", "method": "onehot"},
+            {"type": "scaling", "method": "standard"},
+        ]
+
         if isinstance(winning_res, dict):
             model_name = winning_res.get("model") or winning_res.get("model_name") or "RandomForestClassifier"
             pipeline_dict = winning_res.get("pipeline") or {}
@@ -121,16 +127,15 @@ class ReportGeneratorAgent(BaseAgent):
             metrics_dict = getattr(metrics_obj, "metrics", {}) if metrics_obj else {}
         else:
             model_name = "RandomForestClassifier"
-            pipeline_dict = {
-                "operations": [
-                    {"type": "imputation", "method": "median"},
-                    {"type": "encoding", "method": "onehot"},
-                    {"type": "scaling", "method": "standard"},
-                ],
-                "model_name": model_name,
-            }
+            pipeline_dict = {}
             primary = 0.85
             metrics_dict = {"cv_mean": 0.82, "test_score": 0.85, "train_test_gap": 0.03}
+
+        # Ensure pipeline_dict is a plain dict with required PipelineDefinition fields
+        if not isinstance(pipeline_dict, dict):
+            pipeline_dict = {}
+        pipeline_dict.setdefault("pipeline_id", f"pipe_{winner}")
+        pipeline_dict.setdefault("steps", _default_steps)
 
         final_metrics = {"primary_metric": primary}
         if isinstance(metrics_dict, dict):

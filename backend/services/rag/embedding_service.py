@@ -4,11 +4,21 @@ import math
 import time
 import logging
 from typing import List, Optional
-from google import genai
-from google.genai import types
-from google.genai.errors import APIError, ClientError
 
 from backend.core.config import get_settings
+
+# google-genai is an optional cloud dependency — guard so the module is importable without it.
+try:
+    from google import genai
+    from google.genai import types
+    from google.genai.errors import APIError, ClientError
+    _GENAI_AVAILABLE = True
+except ImportError:
+    genai = None  # type: ignore[assignment]
+    types = None  # type: ignore[assignment]
+    APIError = Exception  # type: ignore[assignment,misc]
+    ClientError = Exception  # type: ignore[assignment,misc]
+    _GENAI_AVAILABLE = False
 
 logger = logging.getLogger("datapilot.rag")
 
@@ -35,6 +45,12 @@ class EmbeddingService:
         if not self.api_key or self.api_key.startswith("your_"):
             raise ValueError(
                 "Gemini API Key is missing. Set GEMINI_API_KEY in your environment or .env file."
+            )
+
+        if not _GENAI_AVAILABLE:
+            raise ImportError(
+                "google-genai package is required for EmbeddingService. "
+                "Install it with: pip install google-genai"
             )
 
         self.model_name = model_name

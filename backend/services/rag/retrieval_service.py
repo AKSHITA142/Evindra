@@ -3,12 +3,36 @@ import sys
 import logging
 from typing import List, Dict, Any, Optional
 
-import dotenv
-import psycopg2
-from supabase import create_client, Client
-
 from backend.core.config import get_settings
-from backend.services.rag.embedding_service import EmbeddingService, EXPECTED_DIMENSION
+
+# Cloud-only dependencies — guarded so the module is importable without them.
+try:
+    import dotenv
+except ImportError:
+    dotenv = None  # type: ignore[assignment]
+
+try:
+    import psycopg2
+    _PSYCOPG2_AVAILABLE = True
+except ImportError:
+    psycopg2 = None  # type: ignore[assignment]
+    _PSYCOPG2_AVAILABLE = False
+
+try:
+    from supabase import create_client, Client
+    _SUPABASE_AVAILABLE = True
+except ImportError:
+    create_client = None  # type: ignore[assignment]
+    Client = None  # type: ignore[assignment,misc]
+    _SUPABASE_AVAILABLE = False
+
+try:
+    from backend.services.rag.embedding_service import EmbeddingService, EXPECTED_DIMENSION
+    _EMBEDDING_AVAILABLE = True
+except ImportError:
+    EmbeddingService = None  # type: ignore[assignment,misc]
+    EXPECTED_DIMENSION = 1536
+    _EMBEDDING_AVAILABLE = False
 
 logger = logging.getLogger("datapilot.rag.retrieval")
 

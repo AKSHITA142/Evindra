@@ -238,9 +238,11 @@ class StrategyPlannerAgent(BaseAgent):
             })
 
         return {
-            "mission": f"Optimization for {obj_text}",
-            "experiment_budget": budget,
-            "experiments": experiments,
+            "plan_id": f"plan_{hash(obj_text) % 100000:05d}",
+            "experiments": [
+                {**exp, "dataset_name": inputs.get("dataset_name", "dataset")}
+                for exp in experiments
+            ],
         }
 
     def run(self, inputs: Dict[str, Any]) -> ExperimentPlan:

@@ -3,12 +3,21 @@ import json
 import logging
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
-from google import genai
-from google.genai import types
-from google.genai.errors import APIError, ClientError
 
 from backend.core.config import get_settings
 from backend.services.rag.context_builder import RAGEvidencePackage, build_rag_evidence_package
+
+try:
+    from google import genai
+    from google.genai import types
+    from google.genai.errors import APIError, ClientError
+    _GENAI_AVAILABLE = True
+except ImportError:
+    genai = None  # type: ignore[assignment]
+    types = None  # type: ignore[assignment]
+    APIError = Exception  # type: ignore[assignment,misc]
+    ClientError = Exception  # type: ignore[assignment,misc]
+    _GENAI_AVAILABLE = False
 
 logger = logging.getLogger("datapilot.rag.decision")
 

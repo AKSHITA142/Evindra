@@ -11,34 +11,50 @@ class ExperimentOperation(BaseSchema):
     params: Dict[str, Any] = Field(default_factory=dict)
 
 
-class ExperimentSpec(BaseSchema):
-    experiment_id: str
-    dataset_name: str
-    operations: List[ExperimentOperation] = Field(default_factory=list)
-
-
-class ExperimentPlan(BaseSchema):
-    plan_id: str
-    experiments: List[ExperimentSpec] = Field(default_factory=list)
-
-
 class PipelineDefinition(BaseSchema):
-    pipeline_id: str
+    """Pipeline definition used by both the LangGraph evaluation layer and the new engine."""
+    pipeline_id: str = Field(default_factory=lambda: f"pipe_{uuid.uuid4().hex[:8]}")
+    operations: List[ExperimentOperation] = Field(default_factory=list)
+    model_name: str = ""
     steps: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class MetricsResult(BaseSchema):
+    """Experiment metrics result — supports both structured and flat-dict usage."""
+    primary_metric: float = 0.0
+    primary_metric_name: str = ""
+    primary_metric_rationale: str = ""
     metrics: Dict[str, float] = Field(default_factory=dict)
+    cv_scores: List[float] = Field(default_factory=list)
+
+
+class ExperimentResult(BaseSchema):
+    """Single experiment result record used by the evaluation engine."""
+    experiment_id: str
+    pipeline: Optional[PipelineDefinition] = None
+    model: str = ""
+    metrics: Optional[MetricsResult] = None
+    runtime: float = 0.0
+    status: str = "completed"
+
+
+class ExperimentSpec(BaseSchema):
+    """Experiment specification used by the StrategyPlannerAgent."""
+    experiment_id: str
+    dataset_name: str = "dataset"
+    operations: List[ExperimentOperation] = Field(default_factory=list)
+    model_name: str = ""
+    params: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ExperimentPlan(BaseSchema):
+    """Experiment plan produced by the StrategyPlannerAgent."""
+    plan_id: str = Field(default_factory=lambda: f"plan_{uuid.uuid4().hex[:8]}")
+    experiments: List[ExperimentSpec] = Field(default_factory=list)
 
 
 class Artifacts(BaseSchema):
     models: List[str] = Field(default_factory=list)
-
-
-class ExperimentResult(BaseSchema):
-    experiment_id: str
-    status: str = "SUCCESS"
-    metrics: Dict[str, float] = Field(default_factory=dict)
 
 
 class PipelineEvaluationResult(BaseSchema):
@@ -49,7 +65,7 @@ class PipelineEvaluationResult(BaseSchema):
     pipeline_id: str
     pipeline_name: str = "Pipeline"
     model_family: str = "UNKNOWN"
-    status: str = "SUCCESS"  # SUCCESS, FAILED
+    status: str = "SUCCESS"
     primary_metric: str = "accuracy"
     primary_score: float = 0.0
     mean_metrics: Dict[str, float] = Field(default_factory=dict)
@@ -62,7 +78,6 @@ class PipelineEvaluationResult(BaseSchema):
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
-        """Returns deterministic JSON-serializable dictionary representation."""
         return self.model_dump(mode="json")
 
 
@@ -84,5 +99,4 @@ class ExperimentRunReport(BaseSchema):
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
-        """Returns deterministic JSON-serializable dictionary representation."""
         return self.model_dump(mode="json")

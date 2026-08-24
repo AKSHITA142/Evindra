@@ -109,8 +109,6 @@ class MetricEngine:
         )
 
         primary = float(metrics.get(metric_key, metrics.get("f1_score", metrics.get("rmse", 0.0))))
-        metrics["primary_metric_name"] = metric_name
-        metrics["primary_metric_rationale"] = rationale
 
         if cv_scores:
             cv_mean = float(np.mean(cv_scores))
@@ -128,7 +126,8 @@ class MetricEngine:
 
         return MetricsResult(
             primary_metric=round(primary, 4),
-            primary_metric_name=str(metrics.get("primary_metric_name", "Primary Metric")),
+            primary_metric_name=str(metric_name),
+            primary_metric_rationale=str(rationale),
             metrics=metrics,
             cv_scores=[round(s, 4) for s in cv_scores],
         )
