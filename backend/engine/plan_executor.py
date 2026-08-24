@@ -104,7 +104,7 @@ class PlanExecutor:
             X = df_clean.copy()
 
         # Perform Train/Test Split BEFORE feature preprocessing fit
-        if y is not None and len(X) > 1:
+        if y is not None and len(X) > 1 and test_size is not None and test_size > 0.0:
             try:
                 X_train, X_test, y_train, y_test = train_test_split(
                     X, y, test_size=test_size, random_state=random_state
